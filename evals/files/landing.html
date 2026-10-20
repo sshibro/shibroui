@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Relay – Preview environments for every pull request</title>
+<style>
+  :root { --ink: #111827; --muted: #4b5563; --line: #e5e7eb; --accent: #4f46e5; color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink); background: #fff; }
+  a { color: var(--accent); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 0 32px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 20px; border-radius: 10px; font-weight: 600; text-decoration: none; background: var(--accent); color: #fff; border: 0; font-size: 16px; }
+
+  header.top { position: sticky; top: 0; z-index: 100; background: #fff; border-bottom: 1px solid var(--line); }
+  header.top .wrap { display: flex; align-items: center; gap: 32px; height: 64px; }
+  .brand { font-weight: 700; font-size: 18px; color: var(--ink); text-decoration: none; }
+  header.top nav { display: flex; gap: 8px; margin-right: auto; }
+  header.top nav a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; color: var(--muted); text-decoration: none; }
+
+  .hero { background: linear-gradient(135deg, #dbeafe, #fed7aa); padding: 88px 0 72px; }
+  .hero h1 { font-size: 60px; line-height: 1.3; margin: 0 0 20px; max-width: 18ch; }
+  .hero p.sub { font-size: 20px; color: #374151; max-width: 62ch; margin: 0 0 28px; }
+  .hero .actions { display: flex; gap: 12px; flex-wrap: wrap; }
+  .hero .btn.alt { background: #111827; }
+  .hero .btn.video { background: #0ea5e9; color: #082f49; }
+  .shot { display: block; width: 100%; max-width: 880px; margin: 48px auto 0; border-radius: 16px; box-shadow: 0 30px 60px rgba(0, 0, 0, .45); }
+
+  .logos { padding: 40px 0; text-align: center; color: var(--muted); }
+  .logos .row { display: flex; justify-content: center; align-items: center; gap: 40px; margin-top: 16px; }
+
+  .reveal { opacity: 0; transform: translateY(40px); transition: opacity .9s ease, transform .9s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+
+  section.feature { padding: 72px 0; }
+  .eyebrow { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  section.feature h2 { font-size: 40px; line-height: 1.2; margin: 4px 0 40px; }
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .card { background: #fff; border-radius: 14px; padding: 28px; box-shadow: 0 12px 32px rgba(0, 0, 0, .35); }
+  .card h3 { font-size: 20px; margin: 16px 0 8px; }
+  .card p { margin: 0; color: var(--muted); }
+  .feature .more { margin-top: 32px; }
+  .f1 { background: #eff6ff; } .f2 { background: #fdf2f8; } .f3 { background: #ecfdf5; } .f4 { background: #fffbeb; }
+
+  .quote { background: #6d28d9; color: #fff; padding: 80px 0; }
+  .quote blockquote { margin: 0; font-size: 28px; line-height: 1.4; max-width: 30ch; }
+  .quote cite { display: block; margin-top: 20px; font-style: normal; color: #ddd6fe; }
+
+  #pricing { padding: 80px 0; }
+  #pricing h2 { font-size: 40px; margin: 0 0 32px; }
+  .plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; align-items: center; }
+  .plan { border: 1px solid var(--line); border-radius: 16px; padding: 28px; }
+  .plan.pro { background: #eef2ff; padding: 44px 28px; }
+  .plan h3 { margin: 0 0 8px; font-size: 20px; }
+  .price { display: flex; align-items: center; gap: 4px; margin: 0 0 16px; }
+  .price strong { font-size: 40px; } .price span { color: var(--muted); }
+  .plan ul { margin: 0 0 24px; padding-left: 20px; color: var(--muted); }
+  .plan .btn { background: #c7d2fe; color: #fff; width: 100%; }
+
+  #faq { padding: 80px 0; background: #f9fafb; }
+  #faq h2 { font-size: 40px; margin: 0 0 24px; }
+  .qa { border-bottom: 1px solid var(--line); padding: 16px 0; }
+  .qa .q { display: flex; justify-content: space-between; cursor: pointer; font-weight: 600; }
+  .qa .a { display: none; color: var(--muted); margin-top: 8px; }
+  .qa.open .a { display: block; }
+
+  .final { background: #0ea5e9; padding: 80px 0; text-align: center; }
+  .final h2 { font-size: 40px; margin: 0 0 24px; color: #fff; }
+
+  footer { padding: 56px 0; font-size: 12px; color: #9ca3af; }
+  footer .cols { display: grid; grid-template-columns: repeat(5, 1fr); gap: 24px; }
+  footer h4 { margin: 0 0 12px; font-size: 12px; color: #6b7280; }
+  footer ul { list-style: none; margin: 0; padding: 0; }
+  footer li { margin: 0 0 6px; }
+  footer a { color: #9ca3af; text-decoration: none; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#">Relay</a>
+    <nav aria-label="Primary"><a href="#features">Product</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a><a href="#">Docs</a></nav>
+    <a class="btn" href="#pricing">Get started</a>
+  </div>
+</header>
+<main>
+  <div class="hero">
+    <div class="wrap">
+      <h1>Relay gives every pull request its own live preview environment so your whole team can review real changes faster</h1>
+      <p class="sub">Spin up an isolated, production-like environment for every branch automatically, share a link with designers, product managers and QA, and tear it down when the pull request merges, all without touching your infrastructure.</p>
+      <div class="actions"><a class="btn" href="#pricing">Start free trial</a><a class="btn alt" href="#">Book a demo</a><a class="btn video" href="#">Watch the video</a></div>
+      <img class="shot" src="assets/relay-preview.png" alt="The Relay dashboard listing open pull requests with their preview status">
+    </div>
+  </div>
+
+  <div class="logos reveal">
+    <p>Trusted by engineering teams at</p>
+    <div class="row">
+      <svg width="140" height="28" viewBox="0 0 140 28" role="img" aria-label="Northwind"><rect width="140" height="28" rx="4" fill="#9ca3af"/></svg>
+      <svg width="44" height="44" viewBox="0 0 44 44" role="img" aria-label="Orbit"><circle cx="22" cy="22" r="22" fill="#9ca3af"/></svg>
+      <svg width="96" height="40" viewBox="0 0 96 40" role="img" aria-label="Lumen"><rect width="96" height="40" rx="6" fill="#9ca3af"/></svg>
+      <svg width="180" height="24" viewBox="0 0 180 24" role="img" aria-label="Fieldstone Labs"><rect width="180" height="24" rx="4" fill="#9ca3af"/></svg>
+      <svg width="60" height="60" viewBox="0 0 60 60" role="img" aria-label="Kite"><rect width="60" height="60" rx="12" fill="#9ca3af"/></svg>
+      <svg width="110" height="32" viewBox="0 0 110 32" role="img" aria-label="Halcyon"><rect width="110" height="32" rx="4" fill="#9ca3af"/></svg>
+    </div>
+  </div>
+
+  <section class="feature f1 reveal" id="features">
+    <div class="wrap">
+      <p class="eyebrow">Previews</p>
+      <h2>A live environment for every branch</h2>
+      <div class="cards">
+        <article class="card"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg><h3>Automatic on push</h3><p>Every push to a branch builds and deploys its own preview in about two minutes.</p></article>
+        <article class="card"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="1.5" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/></svg><h3>Production-like data</h3><p>Seed previews from anonymised snapshots so reviewers see realistic records.</p></article>
+        <article class="card"><svg width="32" height="32" viewBox="0 0 24 24" fill="#4f46e5" aria-hidden="true"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg><h3>Branch URLs</h3><p>Each preview gets a stable link that updates as the branch moves.</p></article>
+      </div>
+      <div class="more"><a class="btn" href="#pricing">Try Relay free</a></div>
+    </div>
+  </section>
+
+  <section class="feature f2 reveal">
+    <div class="wrap">
+      <p class="eyebrow">Review</p>
+      <h2>Review the change, not the diff</h2>
+      <div class="cards">
+        <article class="card"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2.5" aria-hidden="true"><path d="M4 12h16M12 4v16"/></svg><h3>Comments on the page</h3><p>Reviewers pin comments to the exact element, and they sync back to the pull request.</p></article>
+        <article class="card"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" aria-hidden="true"><path d="M5 12l4 4 10-10"/></svg><h3>Approvals in one place</h3><p>Design, product and QA approve the preview before code review starts.</p></article>
+        <article class="card"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="9"/></svg><h3>Visual diffs</h3><p>See what changed pixel by pixel against the main branch.</p></article>
+      </div>
+      <div class="more"><a class="btn" href="#pricing">Sign up now</a></div>
+    </div>
+  </section>
+
+  <section class="feature f3 reveal">
+    <div class="wrap">
+      <p class="eyebrow">Speed</p>
+      <h2>Fast enough to use on every pull request</h2>
+      <div class="cards">
+        <article class="card"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg><h3>Warm builders</h3><p>Cached layers and warm builders cut most previews to under two minutes.</p></article>
+        <article class="card"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" aria-hidden="true"><rect x="3" y="8" width="18" height="8" rx="2"/></svg><h3>Sleep when idle</h3><p>Idle previews sleep after 30 minutes and wake on the next request.</p></article>
+        <article class="card"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" aria-hidden="true"><path d="M3 12h18"/></svg><h3>Cleanup on merge</h3><p>Merged and closed branches tear down their previews automatically.</p></article>
+      </div>
+      <div class="more"><a class="btn" href="#pricing">Start building</a></div>
+    </div>
+  </section>
+
+  <section class="feature f4 reveal">
+    <div class="wrap">
+      <p class="eyebrow">Security</p>
+      <h2>Safe to share outside engineering</h2>
+      <div class="cards">
+        <article class="card"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg><h3>Single sign-on</h3><p>Previews sit behind your identity provider, with per-branch access rules.</p></article>
+        <article class="card"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" aria-hidden="true"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/></svg><h3>Isolated networks</h3><p>Each preview runs in its own network with no access to production.</p></article>
+        <article class="card"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg><h3>Audit log</h3><p>Every visit, comment and approval is recorded for compliance reviews.</p></article>
+      </div>
+      <div class="more"><a class="btn" href="#pricing">Get started</a></div>
+    </div>
+  </section>
+
+  <div class="quote reveal">
+    <div class="wrap">
+      <blockquote>“Our designers stopped asking for screenshots. They open the preview, leave a comment and move on.”</blockquote>
+      <cite>Maya Chen, Head of Product Design at Northwind</cite>
+    </div>
+  </div>
+
+  <section id="pricing" class="reveal">
+    <div class="wrap">
+      <h2>Simple pricing</h2>
+      <div class="plans">
+        <div class="plan"><h3>Starter</h3><p class="price"><strong>$0</strong><span>/month</span></p><ul><li>3 concurrent previews</li><li>Community support</li><li>7-day history</li></ul><a class="btn" href="#">Choose Starter</a></div>
+        <div class="plan pro"><h3>Pro</h3><p class="price"><strong>$24</strong><span>/member/month</span></p><ul><li>Unlimited previews</li><li>SSO</li><li>90-day history</li><li>Priority support</li></ul><a class="btn" href="#">Choose Pro</a></div>
+        <div class="plan"><h3>Enterprise</h3><p class="price"><strong>Custom</strong></p><ul><li>Dedicated builders</li><li>Unlimited previews</li><li>Audit log export</li><li>SSO</li></ul><a class="btn" href="#">Talk to sales</a></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq" class="reveal">
+    <div class="wrap">
+      <h2>Questions</h2>
+      <div class="qa" onclick="this.classList.toggle('open')"><div class="q">Does Relay work with monorepos? <span>+</span></div><p class="a">Yes. Point each app at its folder and Relay builds only what changed.</p></div>
+      <div class="qa" onclick="this.classList.toggle('open')"><div class="q">Which hosts are supported? <span>+</span></div><p class="a">GitHub and GitLab today, with Bitbucket in beta.</p></div>
+      <div class="qa" onclick="this.classList.toggle('open')"><div class="q">Can previews use our own domain? <span>+</span></div><p class="a">On Pro and Enterprise, previews can live under a subdomain you own.</p></div>
+      <div class="qa" onclick="this.classList.toggle('open')"><div class="q">How is usage billed? <span>+</span></div><p class="a">Per active member each month; previews themselves are not metered on Pro.</p></div>
+    </div>
+  </section>
+
+  <div class="final reveal">
+    <div class="wrap">
+      <h2>Ready to ship faster?</h2>
+      <a class="btn" href="#pricing">Create your account</a>
+    </div>
+  </div>
+</main>
+<footer>
+  <div class="wrap cols">
+    <div><h4>Product</h4><ul><li><a href="#">Previews</a></li><li><a href="#">Review</a></li><li><a href="#">Visual diffs</a></li><li><a href="#">Integrations</a></li><li><a href="#">Changelog</a></li><li><a href="#">Roadmap</a></li></ul></div>
+    <div><h4>Company</h4><ul><li><a href="#">About</a></li><li><a href="#">Blog</a></li><li><a href="#">Careers</a></li><li><a href="#">Press</a></li><li><a href="#">Brand</a></li><li><a href="#">Contact</a></li></ul></div>
+    <div><h4>Resources</h4><ul><li><a href="#">Docs</a></li><li><a href="#">Guides</a></li><li><a href="#">API</a></li><li><a href="#">Status</a></li><li><a href="#">Community</a></li><li><a href="#">Templates</a></li></ul></div>
+    <div><h4>Compare</h4><ul><li><a href="#">vs. Staging servers</a></li><li><a href="#">vs. Screenshots</a></li><li><a href="#">vs. Feature flags</a></li><li><a href="#">vs. Local review</a></li></ul></div>
+    <div><h4>Legal</h4><ul><li><a href="#">Terms</a></li><li><a href="#">Privacy</a></li><li><a href="#">Security</a></li><li><a href="#">DPA</a></li><li><a href="#">Cookies</a></li></ul></div>
+  </div>
+</footer>
+<script>
+  const io = new IntersectionObserver((entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -15% 0px' });
+  document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+</script>
+</body>
+</html>

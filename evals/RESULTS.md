@@ -1,5 +1,36 @@
 # Eval results
 
+## Iteration 4: v0.4 (big pages, components, craft) vs v0.3
+
+**Setup:** two new eval inputs (`files/landing.html`, a 12-band landing page with scroll reveals; `files/admin.html`,
+an invoices screen with a table, tabs, menu, toast and a 12-field dialog). Each was fixed once by a v0.3 agent
+(skill read from a snapshot of `481b986`) and once by a v0.4 agent, with the same brief and the same headless
+helpers. Both versions of the tools then graded all six pages; a separate agent judged the screenshots blind
+(A/B labels shuffled per screen).
+
+**What the tools see on the originals (1280px):**
+
+| | Elements measured v0.3 / v0.4 | Rule types flagged v0.3 / v0.4 |
+|---|---|---|
+| Landing | 90 / 227 (scroll reveals hid the rest from v0.3) | 10 / 28 |
+| Admin | 142 / 142 | 18 / 28 |
+
+**After the fixes (v0.4 tools):** landing v0.3 fix 0 fail, 5 warn types left (SU-204, 208, 220, 253, 256);
+landing v0.4 fix 0 fail, 2 accepted (SU-204, 208). Admin v0.3 fix 0 fail, SU-50, 224, 238, 239 left; admin v0.4
+fix 0 fail, SU-53 left. With v0.3 tools both fixes are clean, and v0.3's page map measured only 126 of 259
+elements on the v0.4 landing fix (its gated reveals were still hidden).
+
+**Blind judge:** landing, v0.4 preferred (low–medium confidence; criteria totals tied 44/60). Admin, v0.3 preferred
+(medium–high; 47 vs 43): it stacked the table into rows on phones and moved occasional header actions into More,
+while v0.4 kept the table scrolling sideways and all five header actions visible.
+
+**Changes from this round:** SU-223 now says record tables stack on phones (info check at ≤ 480px), SU-134 caps a
+page header at the title, the primary and two secondary actions (info check), the bold-width reservation is found on
+a child label (SU-249), and 32–40px menu items at pointer widths no longer trip the 44px target goal (SU-62 vs SU-233).
+
+**Caveats:** one run per arm on two synthetic screens; the graders are the skill's own tools and only the v0.4 arm
+could check itself against them; the v0.3 arm also had the helpers' scroll-first option, which v0.3 doesn't ship.
+
 Runs used Claude Code subagents (Opus 5.5) with the skill installed. Triggering and correct use were read
 from the run transcripts (Skill calls, reference files opened, script runs), not from the agents' own
 reports. There was one run per configuration, so small deltas are noise.

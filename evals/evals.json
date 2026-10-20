@@ -344,6 +344,122 @@
           "text": "Settings pattern: fixed-width section nav, bounded content width, danger zone last and separated"
         }
       ]
+    },
+    {
+      "id": 6,
+      "name": "landing-long-page",
+      "prompt": "Here's our marketing landing page: <inputs>/landing.html (images in <inputs>/assets/). It feels long and samey, and people say it looks generic and somehow off. Review it and fix it. Keep every piece of content and each section's message; you may restructure, restyle and lightly rewrite microcopy. Write the page to <outputs>/landing.html and a short report to <outputs>/REPORT.md.",
+      "expected_output": "A long page that reads one screen at a time: every section measured (scroll reveals gated or removed), one lead per band, varied section layouts, one repeated primary CTA, gentle band backgrounds, a hero that says one thing and shows a crisp product shot, pricing that compares at a glance, and craft fixes (layered shadows, OKLCH gradient, one icon stroke, tracked display type).",
+      "files": [
+        "evals/files/landing.html",
+        "evals/files/assets/relay-preview.png",
+        "evals/files/assets/relay-preview@2x.png"
+      ],
+      "assertions": [
+        {
+          "id": "prepare-clean",
+          "text": "Audit and page map with prepare: coverage.unseen has 0 transparent containers"
+        },
+        {
+          "id": "audit-fails",
+          "text": "Audit with prepare at 1280 and 375: 0 fails"
+        },
+        {
+          "id": "bands-lead",
+          "text": "Page map: no SU-204 warn"
+        },
+        {
+          "id": "bands-variety",
+          "text": "Page map: no SU-205 warn"
+        },
+        {
+          "id": "cta",
+          "text": "Page map: no SU-208 warn (one primary CTA label)"
+        },
+        {
+          "id": "banding",
+          "text": "Page map: no SU-210 warn"
+        },
+        {
+          "id": "hero",
+          "text": "Page map: no SU-212 warn; the hero image is the @2x asset or otherwise crisp (no SU-259)"
+        },
+        {
+          "id": "anchors",
+          "text": "Audit: no SU-207 warn and no SU-145 fail"
+        },
+        {
+          "id": "reveals",
+          "text": "Audit: no SU-209 warn"
+        },
+        {
+          "id": "craft",
+          "text": "No SU-253, SU-255, SU-256 or SU-258 warns"
+        },
+        {
+          "id": "budgets",
+          "text": "Page map: no SU-126, SU-127 or SU-128 warns"
+        },
+        {
+          "id": "report",
+          "text": "The report covers bands and states and has a Not checked line"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "admin-components",
+      "prompt": "Here's our invoices admin screen: <inputs>/admin.html (the \"New invoice\" button opens a dialog). Users say it's fiddly and the table is hard to use. Review it and fix it, keeping all features and content. Write the page to <outputs>/admin.html and a short report to <outputs>/REPORT.md.",
+      "expected_output": "A component-correct admin screen: one control size scale, a table with one density, sort semantics, a header checkbox, visible row actions and untruncated amounts, a menu with 32px+ items and the destructive item set apart, no tooltip on a disabled control, tabs that don't shift, states that keep contrast, selection that isn't color-only, a right-sized dialog (or a page/panel for 12 fields), and a toast that doesn't cover actions.",
+      "files": [
+        "evals/files/admin.html"
+      ],
+      "assertions": [
+        {
+          "id": "audit-fails",
+          "text": "Audit at 1280, 375 and with the dialog open: 0 fails"
+        },
+        {
+          "id": "controls",
+          "text": "Page map: no SU-239 warn"
+        },
+        {
+          "id": "table",
+          "text": "Audit: no SU-222, SU-223 or SU-224 findings"
+        },
+        {
+          "id": "hover-only",
+          "text": "Audit: no SU-174 warn"
+        },
+        {
+          "id": "nav",
+          "text": "Audit: no SU-228 or SU-231 warn"
+        },
+        {
+          "id": "menu",
+          "text": "Audit: no SU-233 warn"
+        },
+        {
+          "id": "tooltip",
+          "text": "Audit: no SU-234 warn"
+        },
+        {
+          "id": "states",
+          "text": "Audit: no SU-249, SU-250 or SU-251 warns"
+        },
+        {
+          "id": "dialog",
+          "text": "Audit with the dialog open: no SU-236 warn"
+        },
+        {
+          "id": "toast",
+          "text": "Audit: no SU-238 warn"
+        },
+        {
+          "id": "report",
+          "text": "The report lists screen-level and component fixes with rule IDs"
+        }
+      ]
     }
   ]
 }

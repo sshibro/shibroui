@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Invoices – Relay</title>
+<style>
+  :root { --ink: #111827; --muted: #4b5563; --line: #e5e7eb; --page: #f9fafb; --accent: #4f46e5; color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink); background: var(--page); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button, select, input { font: inherit; }
+  .shell { display: grid; grid-template-columns: 232px 1fr; min-height: 100vh; }
+
+  .side { background: #fff; border-right: 1px solid var(--line); padding: 16px 12px; }
+  .side .brand { font-weight: 700; font-size: 16px; padding: 8px 12px 16px; }
+  .side nav a { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 12px; border-radius: 8px; color: var(--muted); text-decoration: none; }
+  .side nav a.active { background: #eef2ff; color: var(--ink); font-weight: 600; }
+
+  .top { display: flex; align-items: center; justify-content: space-between; height: 56px; padding: 0 32px; background: #fff; border-bottom: 1px solid var(--line); }
+  .crumbs { display: flex; gap: 8px; color: var(--muted); }
+  .crumbs a { color: var(--muted); }
+  .me { display: flex; align-items: center; gap: 8px; }
+  .avatar { border-radius: 50%; background: #c7d2fe; display: inline-grid; place-items: center; color: #312e81; font-weight: 600; }
+
+  main { padding: 28px 32px; }
+  .page-head { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .page-head h1 { font-size: 24px; margin: 0 auto 0 0; }
+  .b { border: 1px solid #d1d5db; background: #fff; border-radius: 8px; padding: 0 14px; color: var(--ink); }
+  .b-32 { height: 32px; } .b-36 { height: 36px; } .b-44 { height: 44px; } .b-28 { height: 28px; width: 28px; padding: 0; }
+  .b.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .bar { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+  [role=tablist] { display: flex; gap: 4px; border-bottom: 1px solid var(--line); flex: 1; }
+  [role=tab] { min-height: 40px; padding: 0 14px; border: 0; background: none; color: var(--muted); cursor: pointer; }
+  [role=tab]:hover { color: #c4c4c8; }
+  [role=tab][aria-selected=true] { color: var(--ink); font-weight: 700; box-shadow: inset 0 -2px 0 var(--ink); }
+  .seg { display: inline-flex; padding: 3px; border-radius: 9px; background: #e5e7eb; }
+  .seg button { min-height: 32px; padding: 0 12px; border: 0; border-radius: 7px; background: transparent; color: #374151; }
+  .seg button.is-on { background: #f3f4f6; color: #111827; }
+
+  .table-wrap { overflow-x: auto; background: #fff; border: 1px solid var(--line); border-radius: 12px; }
+  table { border-collapse: collapse; width: 100%; min-width: 1080px; }
+  th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { font-weight: 600; color: var(--muted); font-size: 13px; }
+  th button { border: 0; background: none; color: inherit; font-weight: 600; display: inline-flex; gap: 4px; align-items: center; padding: 0; cursor: pointer; }
+  td.amount { text-align: right; max-width: 84px; overflow: hidden; text-overflow: ellipsis; }
+  td.who { display: flex; align-items: center; gap: 8px; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .paid { background: #22c55e; color: #fff; } .overdue { background: #ef4444; color: #fff; } .draft { background: #e5e7eb; color: #374151; }
+  .row-actions { opacity: 0; }
+  tr:hover .row-actions { opacity: 1; }
+  .icon-btn { width: 28px; height: 28px; border: 0; background: none; border-radius: 6px; cursor: pointer; }
+
+  .menu { position: absolute; width: 180px; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 24px rgba(0, 0, 0, .3); padding: 4px; }
+  .menu [role=menuitem] { display: block; width: 100%; min-height: 26px; padding: 2px 10px; border: 0; background: none; text-align: left; border-radius: 6px; }
+  .menu .danger { color: #dc2626; }
+
+  .pager { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+  .toast { position: fixed; right: 24px; bottom: 16px; width: 340px; padding: 14px 16px; border-radius: 10px; background: #111827; color: #fff; box-shadow: 0 12px 32px rgba(0, 0, 0, .4); }
+
+  .settings { margin-top: 32px; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 24px; max-width: 640px; }
+  .settings h2 { margin: 0 0 16px; font-size: 18px; }
+  .field { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .switch { width: 44px; height: 24px; border-radius: 999px; border: 0; background: #d1d5db; position: relative; }
+  .switch[aria-checked=true] { background: var(--accent); }
+  .switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left .2s; }
+  .switch[aria-checked=true]::after { left: 23px; }
+  .settings select { height: 36px; padding: 0 10px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; }
+
+  dialog { width: 1100px; max-width: none; border: 0; border-radius: 16px; padding: 28px; box-shadow: 0 24px 48px rgba(0, 0, 0, .35); }
+  dialog::backdrop { background: rgb(0 0 0 / .5); }
+  dialog .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  dialog label { display: grid; gap: 6px; }
+  dialog input, dialog select { height: 36px; border: 1px solid #d1d5db; border-radius: 8px; padding: 0 10px; }
+  dialog footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <div class="brand">Relay</div>
+    <nav aria-label="Workspace">
+      <a href="#">Overview</a><a href="#">Previews</a><a href="#">Members</a><a href="#" class="active">Billing</a><a href="#">Settings</a>
+    </nav>
+  </aside>
+  <div>
+    <div class="top">
+      <nav class="crumbs" aria-label="Breadcrumb"><a href="#">Northwind</a><span aria-hidden="true">/</span><a href="#">Billing</a><span aria-hidden="true">/</span><a href="admin.html">Invoices</a></nav>
+      <div class="me"><span class="avatar" style="width:36px;height:36px">MC</span></div>
+    </div>
+    <main>
+      <div class="page-head">
+        <h1>Invoices</h1>
+        <button class="b b-32" type="button">Export</button>
+        <button class="b b-36" type="button">Filters</button>
+        <button class="b b-28" type="button" aria-label="More actions">⋯</button>
+        <span title="Add a payment method first"><button class="b b-36" type="button" disabled>Send reminders</button></span>
+        <button class="b b-44 primary" type="button" id="new-invoice">New invoice</button>
+      </div>
+
+      <div class="bar">
+        <div role="tablist" aria-label="Invoice status">
+          <button role="tab" aria-selected="true" tabindex="0">All</button>
+          <button role="tab" aria-selected="false" tabindex="-1">Paid</button>
+          <button role="tab" aria-selected="false" tabindex="-1">Overdue</button>
+          <button role="tab" aria-selected="false" tabindex="-1">Drafts</button>
+        </div>
+        <div class="seg" role="radiogroup" aria-label="Period">
+          <button role="radio" aria-checked="true" class="is-on">Month</button><button role="radio" aria-checked="false">Quarter</button><button role="radio" aria-checked="false">Year</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th></th>
+            <th><button type="button">Invoice <span aria-hidden="true">↕</span></button></th>
+            <th><button type="button">Customer <span aria-hidden="true">↕</span></button></th>
+            <th>Status</th>
+            <th><button type="button">Issued <span aria-hidden="true">↕</span></button></th>
+            <th><button type="button">Due <span aria-hidden="true">↕</span></button></th>
+            <th class="amount">Amount</th>
+            <th></th>
+          </tr></thead>
+          <tbody>
+            <tr><td><input type="checkbox" aria-label="Select INV-2041"></td><td>INV-2041</td><td class="who"><span class="avatar" style="width:24px;height:24px">NW</span>Northwind Traders</td><td><span class="badge paid">Paid</span></td><td>3 Oct 2026</td><td>17 Oct 2026</td><td class="amount">$12,480.00</td><td><span class="row-actions"><button class="icon-btn" type="button" aria-label="Actions for INV-2041">⋯</button></span></td></tr>
+            <tr><td><input type="checkbox" aria-label="Select INV-2040"></td><td>INV-2040</td><td class="who"><span class="avatar" style="width:40px;height:40px">OL</span>Orbit Logistics</td><td><span class="badge overdue">Overdue</span></td><td>28 Sep 2026</td><td>12 Oct 2026</td><td class="amount">$108,350.00</td><td><span class="row-actions"><button class="icon-btn" type="button" aria-label="Actions for INV-2040">⋯</button></span></td></tr>
+            <tr><td><input type="checkbox" aria-label="Select INV-2039"></td><td>INV-2039</td><td class="who"><span class="avatar" style="width:24px;height:24px">LH</span>Lumen Health</td><td><span class="badge draft">Draft</span></td><td>27 Sep 2026</td><td>—</td><td class="amount">$2,130.50</td><td><span class="row-actions"><button class="icon-btn" type="button" aria-label="Actions for INV-2039">⋯</button></span></td></tr>
+            <tr><td><input type="checkbox" aria-label="Select INV-2038"></td><td>INV-2038</td><td class="who"><span class="avatar" style="width:32px;height:32px">FL</span>Fieldstone Labs</td><td><span class="badge paid">Paid</span></td><td>21 Sep 2026</td><td>5 Oct 2026</td><td class="amount">$46,900.00</td><td><span class="row-actions"><button class="icon-btn" type="button" aria-label="Actions for INV-2038">⋯</button></span></td></tr>
+            <tr><td><input type="checkbox" aria-label="Select INV-2037"></td><td>INV-2037</td><td class="who"><span class="avatar" style="width:20px;height:20px">KT</span>Kite Travel</td><td><span class="badge overdue">Overdue</span></td><td>14 Sep 2026</td><td>28 Sep 2026</td><td class="amount">$7,215.75</td><td><span class="row-actions"><button class="icon-btn" type="button" aria-label="Actions for INV-2037">⋯</button></span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="position:relative">
+        <div class="menu" role="menu" aria-label="Actions for INV-2041" style="right:24px; top:-188px">
+          <button role="menuitem" type="button">View invoice</button>
+          <button role="menuitem" type="button">Download PDF</button>
+          <button role="menuitem" type="button" class="danger">Delete invoice</button>
+          <button role="menuitem" type="button">Send reminder</button>
+          <button role="menuitem" type="button">Duplicate</button>
+        </div>
+      </div>
+      <div class="pager"><button class="b b-32" type="button">Previous</button><button class="b b-32" type="button">Next</button></div>
+
+      <form class="settings" onsubmit="return false">
+        <h2>Billing preferences</h2>
+        <div class="field"><span id="auto-label">Send overdue reminders automatically</span><button class="switch" type="button" role="switch" aria-checked="true" aria-labelledby="auto-label"></button></div>
+        <div class="field"><label for="currency">Currency</label><select id="currency"><option>USD</option><option>EUR</option></select></div>
+        <div class="field"><label for="terms">Payment terms</label><select id="terms"><option>14 days</option><option>30 days</option><option>45 days</option><option>60 days</option></select></div>
+        <div style="margin-top:16px"><button class="b b-36 primary" type="submit">Save preferences</button></div>
+      </form>
+    </main>
+  </div>
+</div>
+<div class="toast" role="status">Invoice INV-2041 was sent to Northwind Traders.</div>
+
+<dialog id="invoice-dialog" aria-labelledby="dialog-title">
+  <h2 id="dialog-title">New invoice</h2>
+  <form method="dialog">
+    <div class="grid">
+      <label>Customer<input name="customer" autocomplete="organization"></label>
+      <label>Billing email<input name="email" type="email" autocomplete="email"></label>
+      <label>PO number<input name="po"></label>
+      <label>Issue date<input name="issued" type="date"></label>
+      <label>Due date<input name="due" type="date"></label>
+      <label>Currency<select name="currency"><option>USD</option><option>EUR</option></select></label>
+      <label>Line item<input name="item"></label>
+      <label>Quantity<input name="qty" inputmode="numeric"></label>
+      <label>Unit price<input name="price" inputmode="decimal"></label>
+      <label>Tax rate<input name="tax" inputmode="decimal"></label>
+      <label>Discount<input name="discount" inputmode="decimal"></label>
+      <label>Notes<input name="notes"></label>
+    </div>
+    <footer><button class="b b-36" value="cancel">Cancel</button><button class="b b-36 primary" value="create">Create invoice</button></footer>
+  </form>
+</dialog>
+<script>
+  document.getElementById('new-invoice').addEventListener('click', () => document.getElementById('invoice-dialog').showModal());
+  document.querySelectorAll('[role=tab]').forEach((tab) => tab.addEventListener('click', () => {
+    document.querySelectorAll('[role=tab]').forEach((t) => { const on = t === tab; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; });
+  }));
+  document.querySelectorAll('.seg button').forEach((b) => b.addEventListener('click', () => {
+    document.querySelectorAll('.seg button').forEach((o) => { const on = o === b; o.classList.toggle('is-on', on); o.setAttribute('aria-checked', String(on)); });
+  }));
+</script>
+</body>
+</html>

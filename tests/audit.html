@@ -3,45 +3,61 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Audit fixtures</title>
+<title>shibroUI fixture tests</title>
 <style>
   :root { color-scheme: light dark; --ok: #15803d; --bad: #b91c1c; }
-  body { margin: 0; padding: 24px 16px; font: 16px/1.5 system-ui, sans-serif; max-width: 72ch; }
+  body { margin: 0; padding: 24px 16px; font: 16px/1.5 system-ui, sans-serif; max-width: 80ch; }
   li { margin-bottom: 4px; }
   .ok { color: var(--ok); } .bad { color: var(--bad); }
   iframe { position: fixed; left: 0; top: 0; width: 1280px; height: 900px; border: 0; opacity: .01; z-index: -1; }
 </style>
 </head>
 <body>
-<h1>shibroUI audit fixtures</h1>
-<p>Serve the repo root over HTTP (e.g. <code>python3 -m http.server</code>) and open this page. Each fixture is audited in a hidden 1280×900 frame and compared with <code>tests/fixtures/expected.json</code>.</p>
+<h1>shibroUI fixture tests</h1>
+<p>Serve the repo root over HTTP (e.g. <code>python3 -m http.server</code>) and open this page. Each fixture
+is loaded in a hidden 1280×900 frame, optionally opened into a state (<code>open</code> clicks a selector),
+run through <code>audit.js</code> or <code>page-map.js</code>, and compared with <code>tests/fixtures/expected.json</code>.</p>
 <ul id="results"><li>Running…</li></ul>
 <script type="module">
   const results = document.querySelector('#results');
-  const expected = await fetch('fixtures/expected.json').then((r) => r.json());
-  const code = await fetch('../shibroui/scripts/audit.js').then((r) => r.text());
+  const bust = `?${Date.now()}`;
+  const expected = await fetch(`fixtures/expected.json${bust}`).then((r) => r.json());
+  const scripts = {};
+  const load = async (name) => (scripts[name] ??= await fetch(`../shibroui/scripts/${name}${bust}`).then((r) => r.text()));
 
-  async function audit(url) {
-    const frame = Object.assign(document.createElement('iframe'), { src: url });
+  async function run(fixture) {
+    const frame = Object.assign(document.createElement('iframe'), { src: `${fixture.url}?${Date.now()}` });
     document.body.append(frame);
     await new Promise((resolve) => { frame.onload = resolve; });
-    await new Promise((resolve) => setTimeout(resolve, 200));
-    const report = frame.contentWindow.eval(code);
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    if (fixture.open) {
+      frame.contentDocument.querySelector(fixture.open)?.click();
+      await new Promise((resolve) => setTimeout(resolve, 400));
+    }
+    const report = frame.contentWindow.eval(await load(fixture.script));
     frame.remove();
     return report;
   }
 
   const lines = [];
   for (const fixture of expected.fixtures) {
-    const report = await audit(fixture.url);
-    const failIds = new Set(report.findings.filter((f) => f.level === 'fail').map((f) => f.id));
-    const anyIds = new Set(report.findings.map((f) => f.id));
-    const missingFails = fixture.mustFail.filter((id) => !failIds.has(id));
-    const missingAny = fixture.mustFlag.filter((id) => !anyIds.has(id));
-    const tooMany = report.summary.fail > fixture.maxFails;
-    const pass = !missingFails.length && !missingAny.length && !tooMany;
-    lines.push(`<li class="${pass ? 'ok' : 'bad'}"><strong>${pass ? 'PASS' : 'FAIL'}</strong> ${fixture.url}: ${report.summary.fail} fail / ${report.summary.warn} warn`
-      + `${missingFails.length ? ` · missing fails ${missingFails.join(', ')}` : ''}${missingAny.length ? ` · missing flags ${missingAny.join(', ')}` : ''}${tooMany ? ` · more than ${fixture.maxFails} fails` : ''}</li>`);
+    const report = await run(fixture);
+    const items = report.findings || report.flags || [];
+    const failIds = new Set(items.filter((f) => f.level === 'fail').map((f) => f.id));
+    const anyIds = new Set(items.map((f) => f.id));
+    const fails = items.filter((f) => f.level === 'fail').length;
+    const warns = items.filter((f) => f.level === 'warn').length;
+    const hidden = report.coverage ? report.coverage.hiddenStates.length : (report.states || []).length;
+    const problems = [
+      ...(fixture.mustFail || []).filter((id) => !failIds.has(id)).map((id) => `missing fail ${id}`),
+      ...(fixture.mustFlag || []).filter((id) => !anyIds.has(id)).map((id) => `missing flag ${id}`),
+      ...(fixture.maxFails !== undefined && fails > fixture.maxFails ? [`${fails} fails > ${fixture.maxFails}`] : []),
+      ...(fixture.maxWarns !== undefined && warns > fixture.maxWarns ? [`${warns} warns > ${fixture.maxWarns}: ${items.filter((f) => f.level === 'warn').map((f) => `${f.id} ${f.detail}`).join(' | ')}`] : []),
+      ...(fixture.minHiddenStates !== undefined && hidden < fixture.minHiddenStates ? [`${hidden} hidden states < ${fixture.minHiddenStates}`] : []),
+      ...(report.error ? [report.error] : []),
+    ];
+    const pass = !problems.length;
+    lines.push(`<li class="${pass ? 'ok' : 'bad'}"><strong>${pass ? 'PASS' : 'FAIL'}</strong> ${fixture.name} (${fixture.script}${fixture.open ? `, open ${fixture.open}` : ''}): ${fails} fail / ${warns} warn${problems.length ? ` · ${problems.join(' · ')}` : ''}</li>`);
   }
   results.innerHTML = lines.join('');
   document.body.dataset.done = 'true';

@@ -1,10 +1,59 @@
 # Eval results
 
-Runs used Claude Code subagents (Opus 5.5) with the skill installed. The prompts never name the skill,
-so with-skill runs also test triggering. Triggering and correct use were read from the run transcripts
-(Skill calls, reference files opened, script runs), not from the agents' own reports. Outputs were
-graded with `shibroui/scripts/audit.js` at 1280×900 in each state (closed, modal or sheet open, toast)
-plus code inspection. There was one run per configuration, so small deltas are noise.
+Runs used Claude Code subagents (Opus 5.5) with the skill installed. Triggering and correct use were read
+from the run transcripts (Skill calls, reference files opened, script runs), not from the agents' own
+reports. There was one run per configuration, so small deltas are noise.
+
+## Iteration 3: v2 (screen layer) vs v1
+
+**Why v2:** on complex screens v1 didn't check everything, and it only made component-level fixes, not
+layout, hierarchy or overall look. v2 adds:
+- the screen rules SU-119–136 and `page-map.js`;
+- a top-down screen workflow;
+- audit coverage: every instance's path, checked/skipped counts, hidden states, and settling
+  animations before measuring.
+
+**Setup:**
+- Both configurations were told which version to use (v2 installed, v1 from a snapshot).
+- Grading used the latest `page-map.js` and `audit.js` at 1280×900 in every state: each settings panel,
+  plus the menu, tab, accordion and dialog.
+
+| Eval | v2 | v1 | Time v2 / v1 | Tokens v2 / v1 |
+|---|---|---|---|---|
+| Redesign the cluttered 100+ element dashboard (`files/dashboard.html`) | **16/16** | 9/16 | 989s / 599s | 258k / 212k |
+| Build a full settings screen (6 sections, tables, dialog) | **12/12** | 7/12 | 704s / 599s | 239k / 209k |
+| **Mean** | **100%** | **57%** | 847s / 599s | 248k / 210k |
+
+**Results:**
+- **Audit:** 0 fails in every state for both versions. v1 already handled contrast, targets, focus and
+  tables.
+- **Every difference is screen-level:**
+  - **v1 dashboard:** 4 font weights, 9 text colors, near-duplicate backgrounds, off-scale 10/14px
+    spacing, 1–3px edge misses. It made "Export" the primary and moved "Create report" to the sidebar.
+  - **v1 settings:** 4–5 weights, 12 text colors in one panel, 8/10/12px near-duplicate radii, off-scale
+    10/18px spacing, a 1px edge miss.
+  - **v2:** 0 page-map warnings on every panel and state.
+- **Review coverage:** the v2 review has a before → after wireframe, measured screen-level findings and a
+  per-region/state coverage table with a "not checked" list. The v1 review missed the type-system chaos
+  and had no region coverage.
+- **Looks:** both redesigns are clean ([input](screens/1-input-dashboard.jpg),
+  [v1](screens/2-old-skill-redesign.jpg), [v2](screens/3-new-skill-redesign.jpg)), so the visual gap is
+  smaller than the scores suggest. v2's edge is a consistent system and the right primary action.
+
+**Caveats:**
+- `page-map.js` is v2's own tool, so v2 runs could check themselves against the grader. Its budgets are
+  standard design-system practice, but read the delta as "v2 reliably ships a consistent system".
+- Both v1 runs stopped at ~600s (subagent time limit).
+- v2 costs ~40% more time and ~18% more tokens, because it checks more states.
+
+**Audit and page-map fixes found during this round:**
+- Entrance animations frozen in a background tab hid whole panels. Running animations are now finished
+  before measuring.
+- Targets under an open dropdown were scored as tiny. They're now skipped or treated as unknown.
+- A one-off grouping gap was flagged as uneven rhythm. Rhythm now needs 3 or more distinct gaps to flag.
+- Off-screen skip links counted as loud buttons. Fixed.
+- Nav links counted as inline prose links. Fixed.
+- The `::before` hit area was mis-sized with a 1px border. Documented in SU-61.
 
 ## Iteration 1 (2026-10-20)
 

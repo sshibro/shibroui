@@ -2,17 +2,20 @@
 // It is deliberately one expression (no imports, no exports) so any browser tool can run it:
 //   built-in / Chrome browser tools → run the contents as-is
 //   Playwright MCP                  → browser_evaluate with `() => <contents>`
-// Optional scope: window.__shibroAudit = { root: 'main', maxFindings: 150 } before running.
+// Optional scope: window.__shibroAudit = { root: 'main', maxFindings: 400 } before running.
+// Every finding lists all of its instances (CSS paths) and `coverage` says what was checked, what was
+// skipped and why, and which hidden states (tabs, menus, dialogs, accordions) still need a run.
 (() => {
-  const VERSION = '0.1.0';
-  const OPTIONS = { root: null, maxFindings: 150, ...(window.__shibroAudit || {}) };
+  const VERSION = '0.2.0';
+  const OPTIONS = { root: null, maxFindings: 400, ...(window.__shibroAudit || {}) };
   // Reassigned once at run time: while a modal is open the page behind it is inert, so only the modal is audited.
   let ROOT = (OPTIONS.root && document.querySelector(OPTIONS.root)) || document.body;
   const LIMITS = {
     textAA: 4.5, textLarge: 3, largePx: 24, largeBoldPx: 18.66, fieldBoundary: 1.06,
     target: 44, targetFloor: 24, targetGap: 8, heightTolerance: 1, radiusTolerance: 3,
     measureHigh: 80, measureLow: 35, leadingLow: 1.3, leadingHigh: 2.1, minReadingPx: 13,
-    pressScaleMin: 0.94, routineMs: 500, pressMs: 300, shakePx: 12, maxElements: 4000,
+    pressScaleMin: 0.94, routineMs: 500, pressMs: 300, shakePx: 12, maxElements: 6000,
+    maxFocus: 800, maxInstances: 40,
   };
   const INTERACTIVE = 'a[href], button, input:not([type=hidden]), select, textarea, summary, [role=button], [role=link], [role=tab], [role=checkbox], [role=radio], [role=switch], [role=menuitem], [role=option], [tabindex]:not([tabindex="-1"])';
   const TEXT_FIELD = 'input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]):not([type=submit]):not([type=button]):not([type=reset]):not([type=image]), select, textarea';
@@ -31,13 +34,36 @@
     const text = (el.getAttribute('aria-label') || el.textContent || value || '').trim().replace(/\s+/g, ' ').slice(0, 40);
     return `${el.tagName.toLowerCase()}${id}${classes}${text ? ` "${text}"` : ''}`;
   }
+  // A unique-enough CSS path so every instance can be found and fixed, not just the first.
+  function path(el) {
+    if (!el || !el.tagName) return null;
+    const parts = [];
+    for (let node = el; node && node.nodeType === 1 && parts.length < 4; node = node.parentElement) {
+      if (node.id) { parts.unshift(`#${node.id}`); break; }
+      const tag = node.tagName.toLowerCase();
+      const cls = [...node.classList].slice(0, 2).map((c) => `.${c}`).join('');
+      const same = node.parentElement ? [...node.parentElement.children].filter((c) => c.tagName === node.tagName) : [];
+      parts.unshift(`${tag}${cls}${same.length > 1 ? `:nth-of-type(${same.indexOf(node) + 1})` : ''}`);
+      if (tag === 'body') break;
+    }
+    return parts.join(' > ');
+  }
+  // Same rule + same kind of element + same measurement collapse into one finding listing every instance.
   function add(id, level, rule, el, detail, fix) {
     const signature = el && el.tagName ? `${el.tagName}${[...el.classList].join('.')}` : '';
     const key = `${id}|${signature}|${detail}`;
     const existing = findings.get(key);
-    if (existing) { existing.count += 1; return; }
-    findings.set(key, { id, level, rule, element: describe(el), detail, fix, count: 1 });
+    const where = path(el);
+    if (existing) {
+      existing.count += 1;
+      if (where && existing.instances.length < LIMITS.maxInstances) existing.instances.push(where);
+      return;
+    }
+    findings.set(key, { id, level, rule, element: describe(el), detail, fix, count: 1, instances: where ? [where] : [] });
   }
+  const COVERAGE = { checked: {}, skipped: {}, capsHit: [] };
+  const checked = (key, n = 1) => { COVERAGE.checked[key] = (COVERAGE.checked[key] || 0) + n; };
+  const skipped = (key) => { COVERAGE.skipped[key] = (COVERAGE.skipped[key] || 0) + 1; };
 
   // ---------- visibility & geometry ----------
   function isVisible(el) {
@@ -142,6 +168,7 @@
       const parent = walker.currentNode.parentElement;
       if (parent && !owners.has(parent) && !parent.closest('script, style, noscript, template, svg, option, title')) owners.set(parent, walker.currentNode);
     }
+    if (owners.size >= LIMITS.maxElements) COVERAGE.capsHit.push(`text contrast stopped at ${LIMITS.maxElements} text elements; scope with window.__shibroAudit = { root } and run per region`);
     for (const [el, textNode] of owners) {
       if (!isVisible(el) || isDisabled(el)) continue;
       reveal(el);
@@ -149,16 +176,18 @@
       range.selectNodeContents(textNode);
       const box = range.getClientRects()[0];
       if (!box || box.width < 1) continue;
+      checked('text elements');
       const style = css(el);
       const size = px(style.fontSize);
       const large = size >= LIMITS.largePx || (size >= LIMITS.largeBoldPx && px(style.fontWeight) >= 700);
       const needed = large ? LIMITS.textLarge : LIMITS.textAA;
       const backdrop = backdropAt(el, box.left + Math.min(box.width / 2, 12), box.top + box.height / 2);
-      if (backdrop.covered) continue;
+      if (backdrop.covered) { skipped('text covered by an overlay'); continue; }
       const fg = parseColor(style.color);
       const alpha = fg.a * effectiveOpacity(el);
       const id = el.closest('button, [role=button], input[type=submit], input[type=button]') ? 'SU-46' : 'SU-45';
       if (backdrop.image) {
+        skipped('text over an image (contrast not measurable)');
         add('SU-49', 'info', 'Text over images', el, 'text sits on an image; contrast cannot be measured', 'Add a scrim (~75% overlay) and check the brightest spot under the text');
         continue;
       }
@@ -176,9 +205,10 @@
   function checkFields() {
     for (const field of ROOT.querySelectorAll(TEXT_FIELD)) {
       if (!isVisible(field) || !field.parentElement) continue;
+      checked('form fields');
       const rect = reveal(field);
       const behind = backdropAt(field.parentElement, rect.left - 1, rect.top - 1);
-      if (behind.covered || behind.image) continue;
+      if (behind.covered || behind.image) { skipped('field surface not measurable'); continue; }
       const surface = behind.color;
       const s = css(field);
       const fill = over(parseColor(s.backgroundColor), surface);
@@ -194,10 +224,22 @@
 
   // ---------- 3. targets (SU-61–65, SU-63, SU-69) ----------
   const targetsList = () => [...ROOT.querySelectorAll(INTERACTIVE)].filter((el) => isVisible(el) && !isDisabled(el));
+  // A link inside running text: its block holds real non-link words (a nav of bare links does not).
   function isInlineLink(el) {
     if (el.tagName !== 'A' || css(el).display !== 'inline') return false;
     const block = el.parentElement;
-    return !!block && block.textContent.trim().length > el.textContent.trim().length + 10;
+    if (!block) return false;
+    const linkText = [...block.querySelectorAll('a')].reduce((sum, a) => sum + a.textContent.trim().length, 0);
+    const prose = block.textContent.replace(/[\s·|•–—/,]+/g, ' ').trim().length - linkText;
+    return prose >= 12;
+  }
+  // True when `node` belongs to an absolutely/fixed positioned layer that isn't an ancestor of `el`.
+  function overlayOver(node, el) {
+    for (let n = node; n && n !== document.body; n = n.parentElement) {
+      if (n.contains(el)) return false;
+      if (/absolute|fixed/.test(css(n).position) && !n.contains(el)) return true;
+    }
+    return false;
   }
   // Samples a circle of the given diameter around the center (rounded corners don't count against it).
   // Returns true / false, or null when the target can't be brought on screen (e.g. an unfocused skip link).
@@ -211,7 +253,10 @@
       if (x < 0 || y < 0 || x >= innerWidth || y >= innerHeight) continue;
       known += 1;
       const top = document.elementFromPoint(x, y);
-      if (!top || !(el.contains(top) || related.some((n) => n.contains(top)))) return false;
+      if (top && (el.contains(top) || related.some((n) => n.contains(top)))) continue;
+      // A probe landing on an open dropdown/popover/drawer says nothing about this target's own hit area.
+      if (top && overlayOver(top, el)) { known -= 1; continue; }
+      return false;
     }
     return known > 0 ? true : null;
   }
@@ -236,9 +281,15 @@
       const related = el.labels ? [...el.labels].filter(isVisible) : [];
       if (el.matches('input[type=checkbox], input[type=radio]') && related.length) continue; // label rows are SU-50's job
       const rect = reveal(el);
+      checked('interactive targets');
       const isField = el.matches(TEXT_FIELD);
       if (isField && rect.height >= 32) continue;
-      if (covers(el, related, LIMITS.target) !== false) continue;
+      // A target under an open dropdown or popover isn't reachable right now; it's audited in the closed state.
+      const centerHit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      if (centerHit && !el.contains(centerHit) && !related.some((n) => n.contains(centerHit)) && !centerHit.contains(el)) { skipped('target covered by an overlay'); continue; }
+      const coverage = covers(el, related, LIMITS.target);
+      if (coverage === null) { skipped('target off-screen (not measurable)'); continue; }
+      if (coverage) continue;
       const closeish = /close|dismiss|×|✕/i.test(el.getAttribute('aria-label') || el.textContent || '');
       const id = closeish ? 'SU-65' : el.textContent.trim().length > 2 ? 'SU-62' : 'SU-61';
       const size = `${Math.round(rect.width)}×${Math.round(rect.height)}px`;
@@ -309,8 +360,10 @@
   function checkFocus(targets, rules) {
     const live = document.hasFocus();
     if (!live) notes.push('The page has no focus (background tab), so focus rings were judged from CSS rules, not painted styles.');
-    for (const el of targets.slice(0, 120)) {
+    if (targets.length > LIMITS.maxFocus) COVERAGE.capsHit.push(`focus checked the first ${LIMITS.maxFocus} of ${targets.length} focusable elements; scope with window.__shibroAudit = { root } for the rest`);
+    for (const el of targets.slice(0, LIMITS.maxFocus)) {
       if (el.matches('input[type=checkbox], input[type=radio]') && css(el).opacity === '0') continue;
+      checked('focusable elements');
       const painted = live ? liveFocus(el) : null;
       if (live && !painted) continue;
       if (painted && painted.state === 'shadow') continue;
@@ -351,8 +404,10 @@
   function checkTables() {
     for (const table of ROOT.querySelectorAll('table, [role=table], [role=grid]')) {
       if (!isVisible(table)) continue;
+      checked('tables');
       const rows = tableRows(table);
       const body = rows.filter((r) => !r.head);
+      checked('table cells', body.reduce((sum, r) => sum + r.cells.length, 0));
       const header = rows.find((r) => r.head);
       const columns = new Map();
       for (const row of body) row.cells.forEach((cell, index) => {
@@ -508,9 +563,17 @@
   // ---------- 10. forms (SU-50, SU-51, SU-53) ----------
   function checkChoices() {
     for (const input of ROOT.querySelectorAll('input[type=checkbox], input[type=radio]')) {
-      if (!input.isConnected || css(input).display === 'none' || isDisabled(input)) continue;
-      const labels = [...(input.labels || [])].filter(isVisible);
+      if (!input.isConnected || isDisabled(input)) continue;
       const named = input.getAttribute('aria-label') || input.getAttribute('aria-labelledby');
+      const shown = input.getClientRects().length > 0 || [...(input.labels || [])].some(isVisible);
+      if (!shown) {
+        // Inside a hidden state (tab, menu, dialog): the label association can still be checked statically.
+        checked('checkboxes/radios in hidden states (static check)');
+        if (!(input.labels || []).length && !named) add('SU-50', 'fail', 'Clickable labels', input, 'checkbox/radio has no associated label (in a hidden state)', 'Wrap it in <label> or use for/id so the whole row toggles it');
+        continue;
+      }
+      checked('checkboxes/radios');
+      const labels = [...(input.labels || [])].filter(isVisible);
       if (!labels.length) {
         add('SU-50', named ? 'warn' : 'fail', 'Clickable labels', input, named ? 'labelled by aria only; the visible words are not clickable' : 'checkbox/radio has no associated label', 'Wrap it in <label> or use for/id so the whole row toggles it');
         continue;
@@ -544,6 +607,7 @@
     }
     for (const img of ROOT.querySelectorAll('img')) {
       if (!isVisible(img) || !img.naturalWidth || !img.naturalHeight) continue;
+      checked('images');
       const rect = img.getBoundingClientRect();
       const distortion = (rect.width / rect.height) / (img.naturalWidth / img.naturalHeight);
       if (css(img).objectFit === 'fill' && Math.abs(distortion - 1) > 0.03) add('SU-106', 'fail', 'Consistent frames', img, `image stretched ${Math.round((distortion - 1) * 100)}% from its natural aspect`, 'aspect-ratio on the frame + object-fit: cover');
@@ -551,6 +615,7 @@
     const DIALOG = 'dialog[open], [role=dialog], [role=alertdialog], [aria-modal=true]';
     for (const dialog of [ROOT, ...ROOT.querySelectorAll(DIALOG)].filter((d) => d.matches(DIALOG))) {
       if (!isVisible(dialog)) continue;
+      checked('open dialogs');
       if (css(dialog).boxShadow === 'none' && !hasBoundary(dialog.firstElementChild || dialog)) add('SU-103', 'warn', 'Modal depth', dialog, 'dialog has no elevation shadow', 'Level-5 shadow: soft broad + tight edge');
       const nativeBackdrop = dialog.matches('dialog') && dialog.matches(':modal') && parseColor(getComputedStyle(dialog, '::backdrop').backgroundColor).a > 0.05;
       const scrim = [...document.querySelectorAll('body *')].some((n) => {
@@ -632,6 +697,36 @@
     }) || null;
   }
 
+  // Hidden states (closed tabs, menus, accordions, dialogs, popovers) were not on screen, so most checks
+  // could not run inside them. Listing them turns "only the visible state" into a concrete to-do list.
+  function hiddenStates() {
+    const found = [];
+    const seen = new Set();
+    const shown = (n) => n.getClientRects().length > 0 && css(n).visibility !== 'hidden';
+    const push = (nodes, trigger, kind) => {
+      const list = (Array.isArray(nodes) ? nodes : [nodes]).filter(Boolean);
+      if (!list.length || list.some((n) => seen.has(n) || shown(n)) || [...seen].some((s) => s.contains(list[0]))) return;
+      list.forEach((n) => seen.add(n));
+      const interactive = list.reduce((sum, n) => sum + n.querySelectorAll(INTERACTIVE).length, 0);
+      const textChars = list.reduce((sum, n) => sum + n.textContent.trim().length, 0);
+      if (!interactive && textChars < 20) return;
+      found.push({ kind, state: path(list[0]), opensWith: trigger ? `${path(trigger)} "${(trigger.getAttribute('aria-label') || trigger.textContent || '').trim().slice(0, 24)}"` : null, interactive });
+    };
+    ROOT.querySelectorAll('details:not([open])').forEach((d) => push([...d.children].filter((c) => c.tagName !== 'SUMMARY'), d.querySelector('summary'), 'collapsed details'));
+    ROOT.querySelectorAll('[aria-controls]').forEach((t) => {
+      const target = document.getElementById(t.getAttribute('aria-controls'));
+      if (t.getAttribute('role') === 'tab') push(target, t, 'inactive tab');
+      else if (t.getAttribute('aria-expanded') === 'false') push(target, t, 'collapsed menu or panel');
+    });
+    document.querySelectorAll('dialog:not([open])').forEach((d) => push(d, d.id ? document.querySelector(`[aria-controls="${d.id}"], [data-dialog="${d.id}"], [commandfor="${d.id}"], [data-target="#${d.id}"]`) : null, 'closed dialog'));
+    document.querySelectorAll('[popover]').forEach((p) => { let open = false; try { open = p.matches(':popover-open'); } catch { open = false; } if (!open) push(p, p.id ? document.querySelector(`[popovertarget="${p.id}"]`) : null, 'closed popover'); });
+    [...ROOT.querySelectorAll('*')].slice(0, LIMITS.maxElements).forEach((el) => {
+      if (/^(SCRIPT|STYLE|TEMPLATE|NOSCRIPT)$/.test(el.tagName)) return;
+      if ((css(el).display === 'none' || el.hidden) && el.parentElement && css(el.parentElement).display !== 'none') push(el, null, 'hidden element');
+    });
+    return found.slice(0, 30);
+  }
+
   // ---------- run ----------
   if (!innerWidth || !innerHeight) {
     const error = 'The viewport is 0×0 (hidden or background browser pane), so nothing can be measured. Set a viewport size (e.g. 1280×900) or show the page, reload, and run again.';
@@ -639,6 +734,14 @@
     return window.__shibroAuditResult;
   }
   const started = performance.now();
+  // Measure the resting state: an entrance fade caught mid-flight (or frozen in a background tab) would
+  // make whole panels look invisible. Finite running animations are fast-forwarded to their end.
+  const running = document.getAnimations ? document.getAnimations().filter((a) => {
+    const timing = a.effect && a.effect.getComputedTiming();
+    return a.playState !== 'finished' && a.playState !== 'idle' && timing && Number.isFinite(timing.endTime);
+  }) : [];
+  running.forEach((a) => { try { a.finish(); } catch { /* infinite or detached animation */ } });
+  if (running.length) notes.push(`${running.length} running animation(s) were finished first so the resting state was measured.`);
   const OPEN_MODAL = OPTIONS.root ? null : findOpenModal();
   if (OPEN_MODAL) {
     ROOT = OPEN_MODAL;
@@ -662,10 +765,19 @@
   const order = { fail: 0, warn: 1, info: 2 };
   const list = [...findings.values()].sort((a, b) => order[a.level] - order[b.level] || parseInt(a.id.slice(3), 10) - parseInt(b.id.slice(3), 10));
   const summary = list.reduce((acc, f) => ({ ...acc, [f.level]: acc[f.level] + 1 }), { fail: 0, warn: 0, info: 0 });
+  const byRule = list.reduce((acc, f) => ({ ...acc, [f.id]: (acc[f.id] || 0) + f.count }), {});
+  let states = [];
+  try { states = hiddenStates(); } catch (error) { notes.push(`Hidden-state scan errored: ${error.message}`); }
+  if (list.length > OPTIONS.maxFindings) COVERAGE.capsHit.push(`${list.length - OPTIONS.maxFindings} findings beyond maxFindings were cut; raise window.__shibroAudit.maxFindings or scope by region`);
   const report = {
     tool: 'shibroUI audit', version: VERSION, url: location.href, viewport: `${innerWidth}×${innerHeight}`,
-    summary, findings: list.slice(0, OPTIONS.maxFindings), truncated: list.length > OPTIONS.maxFindings,
-    notes: [...notes, 'Only the visible state was audited: open menus, dialogs and other states, then run again.', 'Hierarchy, tone, motion feel and optical balance need a human pass (references/checklist.md).'],
+    summary: { ...summary, instances: list.reduce((sum, f) => sum + f.count, 0), byRule },
+    findings: list.slice(0, OPTIONS.maxFindings), truncated: list.length > OPTIONS.maxFindings,
+    coverage: { ...COVERAGE, hiddenStates: states },
+    notes: [...notes,
+      states.length ? `${states.length} hidden state(s) were not audited (coverage.hiddenStates): open each one and run the audit again.` : 'No hidden states detected.',
+      'Fix every instance listed in findings[].instances, not just the first.',
+      'Layout, hierarchy and visual-system problems are page-map.js territory (references/composition.md).'],
     ms: Math.round(performance.now() - started),
   };
   // Also exposed for tools that load the file with a <script> tag instead of evaluating it.

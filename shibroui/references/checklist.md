@@ -1,7 +1,29 @@
 # shibroUI checklist
 
 Use it as the final self-check after building, and as the walk-through for reviews. Items marked
-**[audit]** are measured by `scripts/audit.js`; the rest need your eyes. Skip sections that don't apply.
+**[audit]** are measured by `scripts/audit.js` and **[map]** by `scripts/page-map.js`; the rest need your
+eyes. For a whole screen, start with the Screen section and do it first. Skip component sections that don't
+apply.
+
+## Screen (do this first for any whole page)
+- [ ] One-sentence job written; the first read answers it **[map: hierarchy.firstRead]** (SU-119)
+- [ ] Only one style (or one group of identical peers) in the top tier **[map]** (SU-119)
+- [ ] One filled primary action per region, at most 2 loud buttons in the first screen; primary in the page header or next to its object **[map]** (SU-120, SU-121)
+- [ ] Focal point and primary action inside the first screen at 1280×900 **[map]** (SU-120)
+- [ ] Known layout pattern; fixed sidebar width; content max-width; consistent page margins and gutters (SU-122, SU-123)
+- [ ] No near-miss edges; all main-column content on one left edge **[map]** (SU-124)
+- [ ] Spacing only from the scale; equal gaps between sibling sections; section gap > group gap > item gap **[map]** (SU-125)
+- [ ] ≤ 6 font sizes, ≤ 3 weights, ≤ 2 families, no near-duplicate sizes **[map]** (SU-126)
+- [ ] Neutrals + one accent + semantic; no near-duplicate grays; no rainbow surfaces **[map]** (SU-127)
+- [ ] ≤ 3–4 radii, shadows only at elevation levels, one border style **[map]** (SU-128)
+- [ ] One h1, no skipped levels, deeper headings not larger, every region titled **[map]** (SU-129)
+- [ ] No card in card in card; boxes only where grouping needs them **[map]** (SU-130)
+- [ ] Three tiers: one loud, a consistent strong style for section titles, the rest quiet **[map]** (SU-131)
+- [ ] Rows share tops and heights **[map]** (SU-132)
+- [ ] Even density, no dead zones next to cramped corners (SU-133)
+- [ ] Layout collapses in priority order at 375px; page-map and audit run at 375 too (SU-135)
+- [ ] Every state opened and audited: tabs, menus, accordions, dialogs, empty, error, loading **[audit: coverage.hiddenStates]** (SU-136)
+- [ ] Coverage table in the report: every region and state, what was checked and fixed, and what wasn't checked
 
 ## Readability
 - [ ] Heading sizes clearly step down to body; no body/supporting text larger than its heading (SU-1)

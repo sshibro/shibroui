@@ -9,20 +9,62 @@
       "expected_output": "A single invoices.html that follows shibroUI: right-aligned tabular amounts, text status badges, equal control heights, visible focus, adequate targets, and a modal with scrim, elevation and focus handling.",
       "files": [],
       "assertions": [
-        { "id": "skill-triggered", "text": "The run invoked the shibroui skill on its own (transcript shows Skill tool with skill=shibroui)" },
-        { "id": "no-contrast-fails", "text": "Audit: no SU-45/SU-46 contrast failures" },
-        { "id": "amounts-right-aligned", "text": "Audit: no SU-17 findings (amount column and its header right-aligned, text columns not centered)" },
-        { "id": "amounts-tabular", "text": "Audit/code: amount cells use tabular-nums (no SU-16 finding)" },
-        { "id": "status-has-words", "text": "Code: each status shows a visible word (Paid/Pending/Overdue), not color alone" },
-        { "id": "search-heights-match", "text": "Audit: no SU-58 finding (search input and button share a height)" },
-        { "id": "pagination-heights-match", "text": "Audit: no SU-59/SU-60 findings" },
-        { "id": "focus-ring", "text": "Audit: no SU-70 findings (2px+ visible focus ring)" },
-        { "id": "no-target-fails", "text": "Audit: no SU-61/62/65/69 fail-level findings" },
-        { "id": "row-delete-not-primary", "text": "Code: the per-row Delete is low emphasis (text/ghost/icon), not a filled loud button" },
-        { "id": "modal-depth", "text": "Audit with the modal open: no SU-103 findings (shadow + dimming backdrop)" },
-        { "id": "modal-behavior", "text": "Code: modal moves focus inside, closes on Escape and returns focus (showModal or equivalent)" },
-        { "id": "reduced-motion", "text": "Audit: no SU-78 finding (reduced-motion fallback when motion is used)" },
-        { "id": "nested-radius", "text": "Audit: no SU-93 findings" }
+        {
+          "id": "skill-triggered",
+          "text": "The run invoked the shibroui skill on its own (transcript shows Skill tool with skill=shibroui)"
+        },
+        {
+          "id": "no-contrast-fails",
+          "text": "Audit: no SU-45/SU-46 contrast failures"
+        },
+        {
+          "id": "amounts-right-aligned",
+          "text": "Audit: no SU-17 findings (amount column and its header right-aligned, text columns not centered)"
+        },
+        {
+          "id": "amounts-tabular",
+          "text": "Audit/code: amount cells use tabular-nums (no SU-16 finding)"
+        },
+        {
+          "id": "status-has-words",
+          "text": "Code: each status shows a visible word (Paid/Pending/Overdue), not color alone"
+        },
+        {
+          "id": "search-heights-match",
+          "text": "Audit: no SU-58 finding (search input and button share a height)"
+        },
+        {
+          "id": "pagination-heights-match",
+          "text": "Audit: no SU-59/SU-60 findings"
+        },
+        {
+          "id": "focus-ring",
+          "text": "Audit: no SU-70 findings (2px+ visible focus ring)"
+        },
+        {
+          "id": "no-target-fails",
+          "text": "Audit: no SU-61/62/65/69 fail-level findings"
+        },
+        {
+          "id": "row-delete-not-primary",
+          "text": "Code: the per-row Delete is low emphasis (text/ghost/icon), not a filled loud button"
+        },
+        {
+          "id": "modal-depth",
+          "text": "Audit with the modal open: no SU-103 findings (shadow + dimming backdrop)"
+        },
+        {
+          "id": "modal-behavior",
+          "text": "Code: modal moves focus inside, closes on Escape and returns focus (showModal or equivalent)"
+        },
+        {
+          "id": "reduced-motion",
+          "text": "Audit: no SU-78 finding (reduced-motion fallback when motion is used)"
+        },
+        {
+          "id": "nested-radius",
+          "text": "Audit: no SU-93 findings"
+        }
       ]
     },
     {
@@ -30,28 +72,90 @@
       "name": "settings-review-fix",
       "prompt": "Here's our workspace settings page: <inputs>/settings.html. Something about it feels off and a few users complained it's hard to use. Can you review it for UI/UX problems and then make a fixed version? Keep the same content and features. Write the fixed page to <outputs>/settings-fixed.html and your review to <outputs>/review.md, listing each problem you found and what you changed. Don't modify the original file.",
       "expected_output": "A review that catches the planted problems (ideally citing rule IDs with measurements) and a fixed page with zero audit fails.",
-      "files": ["evals/files/settings.html"],
+      "files": [
+        "evals/files/settings.html"
+      ],
       "assertions": [
-        { "id": "skill-triggered", "text": "The run invoked the shibroui skill on its own" },
-        { "id": "found-text-contrast", "text": "Review flags the low-contrast hint text (#9ca3af on white)" },
-        { "id": "found-button-contrast", "text": "Review flags the white label on the yellow button" },
-        { "id": "found-invisible-fields", "text": "Review flags inputs that blend into the card (no fill/border)" },
-        { "id": "found-focus", "text": "Review flags removed focus outlines" },
-        { "id": "found-targets", "text": "Review flags the 24px icon buttons / tight spacing" },
-        { "id": "found-control-heights", "text": "Review flags the 32px search input next to the 40px button" },
-        { "id": "found-checkbox-label", "text": "Review flags the checkbox whose text is not a clickable label" },
-        { "id": "found-status-dot", "text": "Review flags the color-only status dot" },
-        { "id": "found-table-alignment", "text": "Review flags centered table columns / numbers not right-aligned or tabular" },
-        { "id": "found-prose", "text": "Review flags the centered intro paragraph and/or the over-long line length" },
-        { "id": "found-links", "text": "Review flags the vague 'click here' link and/or the non-underlined inline link" },
-        { "id": "found-motion", "text": "Review flags the press animation (0.84 scale, 700ms, linear) and/or the ±30px shake" },
-        { "id": "found-nested-radius", "text": "Review flags the cover's radius equal to the card's radius" },
-        { "id": "found-action-priority", "text": "Review flags Delete account being as loud as Save / too many primary buttons" },
-        { "id": "found-naming", "text": "Review flags inconsistent naming (Workspace / Organization / team)" },
-        { "id": "found-empty-state", "text": "Review flags the bare 'No results.' empty state" },
-        { "id": "found-grouping", "text": "Review flags label-to-field gap equal to field-to-field gap" },
-        { "id": "fixed-zero-fails", "text": "Audit of settings-fixed.html: zero fail-level findings" },
-        { "id": "content-preserved", "text": "Fixed page keeps the same sections, fields, table rows and actions" }
+        {
+          "id": "skill-triggered",
+          "text": "The run invoked the shibroui skill on its own"
+        },
+        {
+          "id": "found-text-contrast",
+          "text": "Review flags the low-contrast hint text (#9ca3af on white)"
+        },
+        {
+          "id": "found-button-contrast",
+          "text": "Review flags the white label on the yellow button"
+        },
+        {
+          "id": "found-invisible-fields",
+          "text": "Review flags inputs that blend into the card (no fill/border)"
+        },
+        {
+          "id": "found-focus",
+          "text": "Review flags removed focus outlines"
+        },
+        {
+          "id": "found-targets",
+          "text": "Review flags the 24px icon buttons / tight spacing"
+        },
+        {
+          "id": "found-control-heights",
+          "text": "Review flags the 32px search input next to the 40px button"
+        },
+        {
+          "id": "found-checkbox-label",
+          "text": "Review flags the checkbox whose text is not a clickable label"
+        },
+        {
+          "id": "found-status-dot",
+          "text": "Review flags the color-only status dot"
+        },
+        {
+          "id": "found-table-alignment",
+          "text": "Review flags centered table columns / numbers not right-aligned or tabular"
+        },
+        {
+          "id": "found-prose",
+          "text": "Review flags the centered intro paragraph and/or the over-long line length"
+        },
+        {
+          "id": "found-links",
+          "text": "Review flags the vague 'click here' link and/or the non-underlined inline link"
+        },
+        {
+          "id": "found-motion",
+          "text": "Review flags the press animation (0.84 scale, 700ms, linear) and/or the ±30px shake"
+        },
+        {
+          "id": "found-nested-radius",
+          "text": "Review flags the cover's radius equal to the card's radius"
+        },
+        {
+          "id": "found-action-priority",
+          "text": "Review flags Delete account being as loud as Save / too many primary buttons"
+        },
+        {
+          "id": "found-naming",
+          "text": "Review flags inconsistent naming (Workspace / Organization / team)"
+        },
+        {
+          "id": "found-empty-state",
+          "text": "Review flags the bare 'No results.' empty state"
+        },
+        {
+          "id": "found-grouping",
+          "text": "Review flags label-to-field gap equal to field-to-field gap"
+        },
+        {
+          "id": "fixed-zero-fails",
+          "text": "Audit of settings-fixed.html: zero fail-level findings"
+        },
+        {
+          "id": "content-preserved",
+          "text": "Fixed page keeps the same sections, fields, table rows and actions"
+        }
       ]
     },
     {
@@ -59,19 +163,186 @@
       "name": "share-sheet-motion",
       "prompt": "I have a simple article page (<inputs>/article.html). Add a \"Share\" button that opens a bottom sheet with three share options (Copy link, Email, X) and a close button, and when someone picks Copy link show a small \"Link copied\" toast at the bottom. I want the animations to feel really nice and snappy. Write the result to <outputs>/article.html (leave the original alone).",
       "expected_output": "Interruptible transition-based sheet and toast with short durations, role-appropriate easing, reduced-motion fallback, scrim, elevation, 44px targets and proper focus handling.",
-      "files": ["evals/files/article.html"],
+      "files": [
+        "evals/files/article.html"
+      ],
       "assertions": [
-        { "id": "skill-triggered", "text": "The run invoked the shibroui skill on its own" },
-        { "id": "interruptible", "text": "Code: sheet open/close is driven by CSS transitions / WAAPI / springs that can reverse mid-flight, not one-shot @keyframes" },
-        { "id": "short-durations", "text": "Audit: no SU-85 findings; code durations ≤ 350ms for sheet and toast" },
-        { "id": "easing-by-role", "text": "Audit: no SU-82 findings; enter uses an ease-out style curve" },
-        { "id": "press-scale", "text": "Audit: no SU-72 findings (press scale within 0.95–0.98 if present)" },
-        { "id": "reduced-motion", "text": "Audit: no SU-78 finding" },
-        { "id": "sheet-depth", "text": "Audit with the sheet open: no SU-103 findings (scrim + elevation)" },
-        { "id": "close-target", "text": "Audit with the sheet open: no SU-65/SU-61 fail-level findings" },
-        { "id": "escape-and-focus", "text": "Code: Escape closes the sheet and focus returns to the Share button" },
-        { "id": "toast-announced", "text": "Code: the toast uses role=status or aria-live" },
-        { "id": "no-contrast-fails", "text": "Audit with the sheet open and after the toast: no SU-45/SU-46 failures" }
+        {
+          "id": "skill-triggered",
+          "text": "The run invoked the shibroui skill on its own"
+        },
+        {
+          "id": "interruptible",
+          "text": "Code: sheet open/close is driven by CSS transitions / WAAPI / springs that can reverse mid-flight, not one-shot @keyframes"
+        },
+        {
+          "id": "short-durations",
+          "text": "Audit: no SU-85 findings; code durations ≤ 350ms for sheet and toast"
+        },
+        {
+          "id": "easing-by-role",
+          "text": "Audit: no SU-82 findings; enter uses an ease-out style curve"
+        },
+        {
+          "id": "press-scale",
+          "text": "Audit: no SU-72 findings (press scale within 0.95–0.98 if present)"
+        },
+        {
+          "id": "reduced-motion",
+          "text": "Audit: no SU-78 finding"
+        },
+        {
+          "id": "sheet-depth",
+          "text": "Audit with the sheet open: no SU-103 findings (scrim + elevation)"
+        },
+        {
+          "id": "close-target",
+          "text": "Audit with the sheet open: no SU-65/SU-61 fail-level findings"
+        },
+        {
+          "id": "escape-and-focus",
+          "text": "Code: Escape closes the sheet and focus returns to the Share button"
+        },
+        {
+          "id": "toast-announced",
+          "text": "Code: the toast uses role=status or aria-live"
+        },
+        {
+          "id": "no-contrast-fails",
+          "text": "Audit with the sheet open and after the toast: no SU-45/SU-46 failures"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "dashboard-redesign",
+      "prompt": "Here's our analytics dashboard: <inputs>/dashboard.html. People say it's cluttered and they can't find anything, and honestly it looks amateur. Go through the whole thing, every part of it including the menus, tabs and dialogs, and redesign it so the layout and hierarchy actually work and it looks like a polished product. Keep all the same data and features. Write the redesigned page to <outputs>/dashboard.html and your review to <outputs>/review.md.",
+      "expected_output": "A restructured dashboard with one focal point and primary action, a coherent visual system and alignment, zero audit fails in every state, and a review that covers screen-level and hidden-state problems with a coverage statement.",
+      "files": [
+        "evals/files/dashboard.html"
+      ],
+      "assertions": [
+        {
+          "id": "map-focal",
+          "text": "Page map: one focal point (no SU-119)"
+        },
+        {
+          "id": "map-primary",
+          "text": "Page map: one loud action per region, ≤ 2 in the first screen (no SU-121)"
+        },
+        {
+          "id": "map-type",
+          "text": "Page map: type budget met (no SU-126)"
+        },
+        {
+          "id": "map-color",
+          "text": "Page map: color budget met (no SU-127)"
+        },
+        {
+          "id": "map-shape",
+          "text": "Page map: shape budget met (no SU-128)"
+        },
+        {
+          "id": "map-spacing",
+          "text": "Page map: spacing scale and rhythm (no SU-125 warn)"
+        },
+        {
+          "id": "map-alignment",
+          "text": "Page map: no near-miss edges (no SU-124)"
+        },
+        {
+          "id": "map-headings",
+          "text": "Page map: heading outline (no SU-129 warn)"
+        },
+        {
+          "id": "map-nesting-rows",
+          "text": "Page map: no deep nesting or uneven rows (no SU-130, SU-132)"
+        },
+        {
+          "id": "audit-default",
+          "text": "Audit default view: 0 fails"
+        },
+        {
+          "id": "audit-states",
+          "text": "Audit with each hidden state opened (menu, alerts tab, export dialog, methodology): 0 fails"
+        },
+        {
+          "id": "primary-in-header",
+          "text": "Create report is a prominent primary action in the first screen"
+        },
+        {
+          "id": "content-kept",
+          "text": "All data and features kept (KPIs, chart, activity, orders, tabs, note, methodology, export dialog, more menu, nav)"
+        },
+        {
+          "id": "review-screen",
+          "text": "Review covers screen-level problems (focal point/promo, multiple primaries, color/type chaos, spacing/alignment, headings, nesting)"
+        },
+        {
+          "id": "review-hidden",
+          "text": "Review covers hidden-state problems (alerts tab checkbox/hint, menu items, export dialog button, methodology link)"
+        },
+        {
+          "id": "review-coverage",
+          "text": "Review states its coverage: regions and states checked, and what was not checked"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "settings-build",
+      "prompt": "Build me an account settings screen for our SaaS as one self-contained HTML file: left section nav; Profile (avatar, name, email, timezone select); Security (change password, 2FA toggle, 3 active sessions with sign-out); Notifications (6 toggles in groups); Billing (plan card with usage bar, payment method, invoices table with 5 rows and download links); Team members (8 people, role select, remove); Danger zone (delete workspace with confirm dialog). It should look polished and be easy to scan. Save to <outputs>/settings.html.",
+      "expected_output": "A settings screen in the settings pattern with a coherent visual system, clean hierarchy, zero audit fails in every state and all requested features.",
+      "files": [],
+      "assertions": [
+        {
+          "id": "map-focal-primary",
+          "text": "Page map: no SU-119 / SU-121 flags"
+        },
+        {
+          "id": "map-type",
+          "text": "Page map: type budget met (no SU-126)"
+        },
+        {
+          "id": "map-color",
+          "text": "Page map: color budget met (no SU-127)"
+        },
+        {
+          "id": "map-shape",
+          "text": "Page map: shape budget met (no SU-128)"
+        },
+        {
+          "id": "map-spacing",
+          "text": "Page map: spacing scale and rhythm (no SU-125 warn)"
+        },
+        {
+          "id": "map-alignment",
+          "text": "Page map: no near-miss edges (no SU-124)"
+        },
+        {
+          "id": "map-headings",
+          "text": "Page map: heading outline (no SU-129 warn)"
+        },
+        {
+          "id": "map-nesting-rows",
+          "text": "Page map: no deep nesting or uneven rows (no SU-130, SU-132)"
+        },
+        {
+          "id": "audit-default",
+          "text": "Audit default view: 0 fails"
+        },
+        {
+          "id": "audit-states",
+          "text": "Audit with the delete dialog (and any other hidden state) open: 0 fails"
+        },
+        {
+          "id": "features",
+          "text": "All requested features present with the requested counts"
+        },
+        {
+          "id": "pattern",
+          "text": "Settings pattern: fixed-width section nav, bounded content width, danger zone last and separated"
+        }
       ]
     }
   ]

@@ -11,6 +11,10 @@ visible control can stay small; only the clickable area grows.
 .icon-btn::before { content: ""; position: absolute; inset: -10px; } /* 24 + 2×10 = 44px */
 ```
 
+**Gotcha:** `inset` on an absolutely positioned `::before` is measured from the *padding box*, inside
+the border. With a 1px border, a 32px button needs `inset: -7px` (30 + 2×7 = 44), not `-6px`.
+`audit.js` measures the real hit area, so trust it over the arithmetic.
+
 ### SU-61 Icon targets
 - ❌ A `24×24` hit area, the same as the icon.
 - ✅ `44px` minimum · `48px` comfortable · `52–56px` roomy. The icons stay `24px`.

@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Acme Analytics (good)</title>
+<style>
+  :root {
+    --ink: #18181b; --muted: #52525b; --border: #e4e4e7; --page: #f4f4f5; --surface: #ffffff; --accent: #2563eb;
+    --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s6: 24px; --s8: 32px; --control-h: 40px;
+    --r-control: 6px; --r-card: 12px; --ease-out: cubic-bezier(.22, 1, .36, 1);
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: -apple-system, system-ui, sans-serif; font-size: 16px; line-height: 1.5; background: var(--page); color: var(--ink); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  a { color: var(--accent); }
+  .topbar { display: flex; align-items: center; gap: var(--s6); height: 56px; padding: 0 var(--s6); background: var(--surface); border-bottom: 1px solid var(--border); }
+  .logo { font-weight: 600; font-size: 16px; }
+  .topbar nav { display: flex; gap: var(--s2); }
+  .topbar nav a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 var(--s3); color: var(--muted); text-decoration: none; font-size: 14px; }
+  .topbar nav a[aria-current=page] { color: var(--ink); font-weight: 600; }
+  .top-right { margin-left: auto; display: flex; align-items: center; gap: var(--s3); }
+  .icon-btn { position: relative; width: 32px; height: 32px; border: 1px solid var(--border); border-radius: var(--r-control); background: var(--surface); color: var(--ink); font: inherit; font-size: 14px; }
+  .icon-btn::before { content: ""; position: absolute; inset: -7px; } /* padding box + 1px border: 32 + 2×6 = 44 */
+  .avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+  .layout { display: grid; grid-template-columns: 240px 1fr; }
+  .sidebar { background: var(--surface); border-right: 1px solid var(--border); padding: var(--s6) var(--s4); min-height: calc(100vh - 56px); }
+  .sidebar a { display: flex; align-items: center; min-height: 44px; padding: 0 var(--s3); border-radius: var(--r-control); color: var(--muted); text-decoration: none; font-size: 14px; }
+  .sidebar a[aria-current=page] { background: var(--page); color: var(--ink); font-weight: 600; }
+  main { padding: var(--s8); max-width: 1200px; width: 100%; display: flex; flex-direction: column; gap: var(--s8); }
+  .page-header { display: flex; align-items: flex-end; gap: var(--s4); }
+  .page-header h1 { font-size: 28px; line-height: 1.2; font-weight: 600; letter-spacing: -0.02em; }
+  .page-header p { color: var(--muted); font-size: 14px; margin-top: var(--s1); }
+  .page-header .actions { margin-left: auto; display: flex; gap: var(--s3); }
+  .btn { position: relative; height: var(--control-h); padding: 0 var(--s4); border-radius: var(--r-control); border: 1px solid var(--border); background: var(--surface); color: var(--ink); font: inherit; font-size: 14px; font-weight: 500; transition: transform 200ms var(--ease-out); }
+  .btn::before { content: ""; position: absolute; inset: -3px 0; }
+  .btn:active { transform: scale(.97); }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s6); }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-card); padding: var(--s6); }
+  .kpi .label { font-size: 14px; color: var(--muted); }
+  .kpi .num { font-size: 28px; line-height: 1.2; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; margin-top: var(--s2); }
+  .kpi .delta { font-size: 12px; margin-top: var(--s2); }
+  .up { color: #14532d; } .down { color: #7f1d1d; }
+  .grid { display: grid; grid-template-columns: 2fr 1fr; gap: var(--s6); }
+  h2 { font-size: 20px; line-height: 1.3; font-weight: 600; }
+  .card > h2 { margin-bottom: var(--s4); }
+  .chart { height: 220px; display: flex; align-items: flex-end; gap: var(--s3); }
+  .bar { flex: 1; background: #93c5fd; border-radius: 6px 6px 0 0; }
+  .feed { list-style: none; padding: 0; }
+  .feed li { padding: var(--s3) 0; border-top: 1px solid var(--border); font-size: 14px; }
+  .feed li:first-child { border-top: 0; padding-top: 0; }
+  .feed small { display: block; color: var(--muted); font-size: 12px; }
+  .section-head { display: flex; align-items: center; gap: var(--s4); margin-bottom: var(--s4); }
+  .filter { margin-left: auto; height: var(--control-h); width: 240px; padding: 0 var(--s3); border: 1px solid #a1a1aa; border-radius: var(--r-control); background: #fafafa; font: inherit; font-size: 14px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font-weight: 500; color: var(--muted); padding: var(--s3) var(--s4); border-bottom: 1px solid var(--border); }
+  td { text-align: left; padding: var(--s3) var(--s4); border-bottom: 1px solid var(--border); }
+  .num-col { text-align: right; font-variant-numeric: tabular-nums; }
+  .badge { display: inline-flex; align-items: center; gap: var(--s1); padding: 2px var(--s2); border-radius: 999px; font-size: 12px; font-weight: 500; }
+  .badge.paid { background: #dcfce7; color: #14532d; } .badge.pending { background: #fef3c7; color: #78350f; } .badge.refunded { background: #fee2e2; color: #7f1d1d; }
+  [role=tablist] { display: flex; gap: var(--s2); border-bottom: 1px solid var(--border); margin-bottom: var(--s4); }
+  [role=tab] { position: relative; min-height: 44px; padding: 0 var(--s3); border: 0; background: none; font: inherit; font-size: 14px; color: var(--muted); }
+  [role=tab][aria-selected=true] { color: var(--ink); font-weight: 600; box-shadow: inset 0 -2px 0 var(--ink); }
+  .option { display: flex; align-items: center; gap: var(--s2); min-height: 40px; user-select: none; font-size: 14px; }
+  .hint { color: var(--muted); font-size: 14px; }
+  .note { max-width: 65ch; color: var(--muted); font-size: 14px; }
+  details summary { cursor: pointer; font-weight: 500; min-height: 44px; display: flex; align-items: center; }
+  details p { color: var(--muted); font-size: 14px; max-width: 65ch; }
+  footer { padding: var(--s6) var(--s8); color: var(--muted); font-size: 14px; border-top: 1px solid var(--border); background: var(--surface); }
+  dialog { border: 0; border-radius: var(--r-card); padding: var(--s6); width: min(420px, 100% - 32px); box-shadow: 0 2px 6px rgb(0 0 0 / .10), 0 24px 48px rgb(0 0 0 / .18); }
+  dialog::backdrop { background: rgb(0 0 0 / .5); }
+  dialog .actions { display: flex; justify-content: flex-end; gap: var(--s3); margin-top: var(--s6); }
+  dialog h2 { margin-bottom: var(--s2); }
+  dialog p { color: var(--muted); font-size: 14px; }
+  @media (prefers-reduced-motion: reduce) { .btn { transition: none; } .btn:active { transform: none; } }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <span class="logo">Acme Analytics</span>
+  <nav aria-label="Primary"><a href="/overview" aria-current="page">Overview</a><a href="/reports">Reports</a><a href="/customers">Customers</a></nav>
+  <div class="top-right">
+    <button class="icon-btn" aria-label="Notifications">🔔</button>
+    <button class="icon-btn" aria-label="Help">?</button>
+    <img class="avatar" alt="Account" src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect width='40' height='40' fill='%23a5b4fc'/%3E%3C/svg%3E">
+  </div>
+</header>
+<div class="layout">
+  <nav class="sidebar" aria-label="Sections">
+    <a href="/dashboard" aria-current="page">Dashboard</a><a href="/sales">Sales</a><a href="/marketing">Marketing</a><a href="/products">Products</a><a href="/team">Team</a>
+  </nav>
+  <main>
+    <div class="page-header">
+      <div><h1>Dashboard</h1><p>Last 30 days · updated 4 minutes ago</p></div>
+      <div class="actions"><button class="btn" id="export-btn" aria-controls="export-dialog">Export</button><button class="btn btn-primary">Create report</button></div>
+    </div>
+    <div class="kpis">
+      <div class="card kpi"><div class="label">Revenue</div><div class="num">$48,210</div><div class="delta up">↑ 12% vs last month</div></div>
+      <div class="card kpi"><div class="label">Orders</div><div class="num">1,284</div><div class="delta up">↑ 4%</div></div>
+      <div class="card kpi"><div class="label">Conversion</div><div class="num">3.2%</div><div class="delta down">↓ 0.3 pts</div></div>
+      <div class="card kpi"><div class="label">Refunds</div><div class="num">27</div><div class="delta down">↑ 9 this week</div></div>
+    </div>
+    <div class="grid">
+      <section class="card">
+        <h2>Revenue</h2>
+        <div class="chart" role="img" aria-label="Revenue by week, rising from 40% to 90% of target"><div class="bar" style="height:40%"></div><div class="bar" style="height:65%"></div><div class="bar" style="height:52%"></div><div class="bar" style="height:80%"></div><div class="bar" style="height:71%"></div><div class="bar" style="height:90%"></div></div>
+      </section>
+      <section class="card">
+        <h2>Activity</h2>
+        <ul class="feed">
+          <li>Maya refunded order #1042<small>2 minutes ago</small></li>
+          <li>New signup from Northwind, see the <a href="/customers/northwind">Northwind profile</a><small>14 minutes ago</small></li>
+          <li>Weekly report exported<small>1 hour ago</small></li>
+        </ul>
+      </section>
+    </div>
+    <section class="card">
+      <div class="section-head"><h2>Recent orders</h2><input class="filter" aria-label="Filter orders" placeholder="Filter orders"></div>
+      <table>
+        <thead><tr><th>Order</th><th>Customer</th><th class="num-col">Amount</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>#1042</td><td>Maya Chen</td><td class="num-col">$1,264.50</td><td><span class="badge refunded">✕ Refunded</span></td></tr>
+          <tr><td>#1041</td><td>Noah Williams</td><td class="num-col">$325.00</td><td><span class="badge pending">● Pending</span></td></tr>
+          <tr><td>#1040</td><td>Sofia Ramirez</td><td class="num-col">$17.25</td><td><span class="badge paid">✓ Paid</span></td></tr>
+          <tr><td>#1039</td><td>Elias Brooks</td><td class="num-col">$980.00</td><td><span class="badge paid">✓ Paid</span></td></tr>
+        </tbody>
+      </table>
+    </section>
+    <section class="card">
+      <h2>Report settings</h2>
+      <div role="tablist" aria-label="Report settings" style="margin-top: 16px">
+        <button role="tab" id="tab-general" aria-selected="true" aria-controls="panel-general">General</button>
+        <button role="tab" id="tab-alerts" aria-selected="false" aria-controls="panel-alerts">Alerts</button>
+      </div>
+      <div role="tabpanel" id="panel-general" aria-labelledby="tab-general"><p class="hint">Reports refresh every 15 minutes, in your workspace time zone.</p></div>
+      <div role="tabpanel" id="panel-alerts" aria-labelledby="tab-alerts" hidden>
+        <label class="option"><input type="checkbox"> Alert me when refunds spike</label>
+        <p class="hint">We'll email the workspace owner when refunds exceed 3× the weekly average.</p>
+      </div>
+    </section>
+    <section>
+      <p class="note">Revenue is recognised when an order is paid. Refunds are subtracted on the day they are issued, and figures can change for up to 48 hours while payments settle.</p>
+      <details>
+        <summary>Methodology</summary>
+        <p>We use the payment date for revenue. Read the <a href="/docs/metrics">metric definitions</a>.</p>
+      </details>
+    </section>
+  </main>
+</div>
+<footer>© 2026 Acme Analytics</footer>
+<dialog id="export-dialog" aria-labelledby="export-title">
+  <h2 id="export-title">Export dashboard</h2>
+  <p>Download the current view as a CSV file.</p>
+  <div class="actions"><button class="btn" id="export-cancel">Cancel</button><button class="btn btn-primary" id="export-confirm">Download CSV</button></div>
+</dialog>
+<script>
+  document.querySelectorAll('[role=tab]').forEach((tab) => tab.addEventListener('click', () => {
+    document.querySelectorAll('[role=tab]').forEach((t) => { const on = t === tab; t.setAttribute('aria-selected', String(on)); document.getElementById(t.getAttribute('aria-controls')).hidden = !on; });
+  }));
+  const dialog = document.getElementById('export-dialog');
+  document.getElementById('export-btn').addEventListener('click', () => dialog.showModal());
+  document.getElementById('export-cancel').addEventListener('click', () => dialog.close());
+  document.getElementById('export-confirm').addEventListener('click', () => dialog.close());
+</script>
+</body>
+</html>

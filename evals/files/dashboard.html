@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Acme Analytics</title>
+<style>
+  body { margin: 0; font-family: -apple-system, system-ui, sans-serif; background: #f3f3f3; color: #333; font-size: 15px; }
+  a { color: #333; text-decoration: none; }
+  button:focus, a:focus { outline: none; }
+  .topbar { display: flex; align-items: center; gap: 17px; padding: 9px 22px; background: #fff; border-bottom: 1px solid #e1e1e1; }
+  .logo { font-family: Georgia, serif; font-size: 20px; font-weight: 800; color: #343434; }
+  .topbar nav a { font-size: 14px; color: #555; margin-right: 13px; }
+  .top-right { margin-left: auto; display: flex; align-items: center; gap: 2px; }
+  .icon-btn { width: 20px; height: 20px; border: 0; border-radius: 3px; background: #e9e9e9; padding: 0; font-size: 11px; color: #333; }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; margin-left: 9px; }
+  .menu-wrap { position: relative; }
+  #more-menu { position: absolute; right: 0; top: 24px; background: #fff; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 6px 20px rgba(0,0,0,.18); padding: 3px; margin: 0; list-style: none; width: 150px; }
+  #more-menu a { display: block; font-size: 12px; padding: 3px 7px; color: #666; }
+  .layout { display: flex; }
+  .sidebar { width: 22%; background: #2b2f3a; padding: 27px 15px; min-height: 1400px; box-sizing: border-box; }
+  .sidebar a { display: block; color: #c8c8c8; font-size: 13px; padding: 7px 0; }
+  .content { flex: 1; padding: 22px 26px; min-width: 0; }
+  .promo { background: linear-gradient(90deg, #7c3aed, #ec4899); color: #fff; border-radius: 20px; padding: 30px; text-align: center; margin-bottom: 9px; box-shadow: 0 10px 30px rgba(124,58,237,.4); }
+  .promo h2 { font-size: 30px; font-weight: 800; margin: 0 0 7px; }
+  .promo p { font-size: 17px; max-width: 520px; margin: 0 auto; }
+  h1.page-title { font-size: 18px; font-weight: 600; color: #3a3a3a; margin: 0 0 13px 2px; }
+  .toolbar { display: flex; gap: 7px; align-items: center; flex-wrap: wrap; margin-bottom: 40px; }
+  .search { height: 30px; border: 1px solid #ddd; border-radius: 4px; padding: 0 9px; font-size: 15px; width: 220px; }
+  .btn { height: 36px; padding: 0 13px; border: 0; border-radius: 6px; color: #fff; background: #2563eb; font-size: 14px; transition: transform 600ms linear; }
+  .btn:active { transform: scale(.8); }
+  .btn.green { background: #16a34a; } .btn.orange { background: #ea580c; } .btn.pink { background: #db2777; } .btn.teal { background: #0d9488; }
+  .kpis { display: flex; gap: 15px; margin-bottom: 13px; }
+  .kpi { flex: 1; border-radius: 10px; padding: 17px; color: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.2); }
+  .kpi .num { font-size: 32px; font-weight: 700; }
+  .kpi .label { font-size: 12px; text-transform: uppercase; font-weight: 300; }
+  .kpi.blue { background: #3b82f6; } .kpi.yellow { background: #facc15; } .kpi.green { background: #22c55e; margin-top: 3px; } .kpi.red { background: #ef4444; padding-bottom: 33px; }
+  .grid { display: flex; gap: 22px; margin-bottom: 22px; align-items: flex-start; }
+  .card { background: #fff; border-radius: 12px; padding: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+  .card h2 { font-size: 24px; margin: 9px 7px; }
+  .chart-card { flex: 2; border-radius: 16px; }
+  .chart { height: 220px; border-radius: 16px; background: #eef2ff; display: flex; align-items: flex-end; gap: 9px; padding: 15px; box-sizing: border-box; }
+  .bar { flex: 1; background: #818cf8; border-radius: 2px; }
+  .activity { flex: 1; }
+  .panel { background: #fafafa; border: 1px solid #e5e5e5; border-radius: 8px; padding: 9px; }
+  .item { background: #fff; border: 1px solid #eee; border-radius: 6px; padding: 7px; margin-bottom: 7px; box-shadow: 0 1px 1px rgba(0,0,0,.05); font-size: 14px; }
+  .item small { display: block; color: #9a9a9a; font-size: 12px; }
+  .orders { margin-bottom: 30px; }
+  .orders h4 { font-size: 15px; margin: 9px 7px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: center; padding: 9px; border-bottom: 1px solid #eee; }
+  td.id { font-family: 'Courier New', monospace; }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; }
+  .filter-input { border: 0; background: #fff; padding: 9px; font-size: 14px; width: 200px; }
+  .tabs-card { margin-bottom: 17px; }
+  [role=tablist] { display: flex; gap: 2px; margin: 7px; }
+  [role=tab] { border: 0; background: #ececec; padding: 7px 13px; border-radius: 6px 6px 0 0; font-size: 13px; }
+  [role=tab][aria-selected=true] { background: #fff; font-weight: 600; }
+  .tab-panel { padding: 13px; }
+  .hint { color: #c4c4c4; font-size: 12px; }
+  .note { font-size: 15px; line-height: 1.25; color: #666; margin: 0 0 22px 1px; }
+  details { margin-bottom: 9px; }
+  details summary { cursor: pointer; padding: 9px; font-size: 14px; }
+  footer { padding: 15px 26px; font-size: 11px; color: #b0b0b0; background: #fff; }
+  footer a { color: #b0b0b0; font-size: 11px; }
+  dialog { border: 0; border-radius: 14px; padding: 22px; }
+  .btn-yellow { background: #ffd000; color: #fff; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <span class="logo">Acme Analytics</span>
+  <nav><a href="/overview">Overview</a><a href="/reports">Reports</a><a href="/customers">Customers</a></nav>
+  <div class="top-right">
+    <button class="icon-btn" aria-label="Notifications">🔔</button>
+    <button class="icon-btn" aria-label="Help">?</button>
+    <div class="menu-wrap">
+      <button class="icon-btn" aria-label="More" aria-expanded="false" aria-controls="more-menu" id="more-btn">⋯</button>
+      <ul id="more-menu" hidden>
+        <li><a href="/settings">Settings</a></li>
+        <li><a href="/billing">Billing</a></li>
+        <li><a href="/logout">Sign out</a></li>
+      </ul>
+    </div>
+    <img class="avatar" alt="Account" src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='20'%3E%3Crect width='40' height='20' fill='%23a5b4fc'/%3E%3C/svg%3E">
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <a href="/dashboard">Dashboard</a><a href="/sales">Sales</a><a href="/marketing">Marketing</a><a href="/products">Products</a>
+    <a href="/team">Team</a><a href="/integrations">Integrations</a><a href="/audit-log">Audit log</a><a href="/api">API</a><a href="/help">Help center</a>
+  </aside>
+  <main class="content">
+    <section class="promo">
+      <h2>Upgrade to Acme Pro today!</h2>
+      <p>Unlock unlimited dashboards, scheduled exports, anomaly alerts and priority support for your whole team, starting at just $49 per seat per month.</p>
+    </section>
+    <h1 class="page-title">Dashboard</h1>
+    <div class="toolbar">
+      <input class="search" placeholder="Search...">
+      <button class="btn">Search</button>
+      <button class="btn green">Filter</button>
+      <button class="btn orange" data-dialog="export-dialog" id="export-btn">Export</button>
+      <button class="btn pink">Share</button>
+      <button class="btn teal">Refresh</button>
+    </div>
+    <div class="kpis">
+      <div class="kpi blue"><div class="num">$48,210</div><div class="label">Revenue</div></div>
+      <div class="kpi yellow"><div class="num">1,284</div><div class="label">Orders</div></div>
+      <div class="kpi green"><div class="num">3.2%</div><div class="label">Conversion</div></div>
+      <div class="kpi red"><div class="num">27</div><div class="label">Refunds</div></div>
+    </div>
+    <div class="grid">
+      <section class="card chart-card">
+        <h2>Revenue</h2>
+        <div class="chart"><div class="bar" style="height:40%"></div><div class="bar" style="height:65%"></div><div class="bar" style="height:52%"></div><div class="bar" style="height:80%"></div><div class="bar" style="height:71%"></div><div class="bar" style="height:90%"></div></div>
+      </section>
+      <section class="card activity">
+        <div class="panel">
+          <div class="item">Maya refunded order #1042<small>2 minutes ago</small></div>
+          <div class="item">New signup from Northwind, see the <a href="/customers/northwind">customer profile</a> for details<small>14 minutes ago</small></div>
+          <div class="item">Weekly report exported<small>1 hour ago</small></div>
+        </div>
+      </section>
+    </div>
+    <section class="card orders">
+      <h4>Recent orders</h4>
+      <input class="filter-input" placeholder="Filter orders">
+      <table>
+        <thead><tr><th>Order</th><th>Customer</th><th>Amount</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td class="id">#1042</td><td>Maya Chen</td><td>1,264.50</td><td><span class="dot" style="background:#22c55e"></span></td></tr>
+          <tr><td class="id">#1041</td><td>Noah Williams</td><td>325.00</td><td><span class="dot" style="background:#f59e0b"></span></td></tr>
+          <tr><td class="id">#1040</td><td>Sofia Ramirez</td><td>17.25</td><td><span class="dot" style="background:#ef4444"></span></td></tr>
+          <tr><td class="id">#1039</td><td>Elias Brooks</td><td>980.00</td><td><span class="dot" style="background:#22c55e"></span></td></tr>
+        </tbody>
+      </table>
+    </section>
+    <section class="card tabs-card">
+      <div role="tablist" aria-label="Report settings">
+        <button role="tab" id="tab-general" aria-selected="true" aria-controls="panel-general">General</button>
+        <button role="tab" id="tab-alerts" aria-selected="false" aria-controls="panel-alerts">Alerts</button>
+      </div>
+      <div class="tab-panel" role="tabpanel" id="panel-general" aria-labelledby="tab-general">
+        <p>Reports refresh every 15 minutes. Times are shown in your workspace time zone.</p>
+      </div>
+      <div class="tab-panel" role="tabpanel" id="panel-alerts" aria-labelledby="tab-alerts" hidden>
+        <div><input type="checkbox" id="alert-refunds"> <span>Alert me when refunds spike</span></div>
+        <p class="hint">We'll email the workspace owner when refunds exceed 3× the weekly average.</p>
+      </div>
+    </section>
+    <p class="note">About this report: revenue is recognised when an order is paid, refunds are subtracted on the day they are issued, and conversion is calculated as paid orders divided by unique sessions for the selected period. Figures may change for up to 48 hours while payments settle and late events arrive from the tracking pipeline.</p>
+    <details class="card">
+      <summary>Methodology</summary>
+      <p>We use the payment date for revenue. For the full definitions <a href="/docs/metrics">click here</a>.</p>
+    </details>
+  </main>
+</div>
+<footer>© 2026 Acme Analytics · <a href="/reports/new">Create report</a> · <a href="/privacy">Privacy</a></footer>
+<dialog id="export-dialog">
+  <h3>Export dashboard</h3>
+  <p>Choose a format for the export.</p>
+  <button class="btn btn-yellow" id="export-confirm">Download CSV</button>
+  <button class="btn" id="export-cancel">Cancel</button>
+</dialog>
+<script>
+  const moreBtn = document.getElementById('more-btn');
+  const moreMenu = document.getElementById('more-menu');
+  moreBtn.addEventListener('click', () => { const open = moreMenu.hidden; moreMenu.hidden = !open; moreBtn.setAttribute('aria-expanded', String(open)); });
+  document.querySelectorAll('[role=tab]').forEach((tab) => tab.addEventListener('click', () => {
+    document.querySelectorAll('[role=tab]').forEach((t) => { const on = t === tab; t.setAttribute('aria-selected', String(on)); document.getElementById(t.getAttribute('aria-controls')).hidden = !on; });
+  }));
+  const dialog = document.getElementById('export-dialog');
+  document.getElementById('export-btn').addEventListener('click', () => dialog.showModal());
+  document.getElementById('export-cancel').addEventListener('click', () => dialog.close());
+  document.getElementById('export-confirm').addEventListener('click', () => dialog.close());
+</script>
+</body>
+</html>

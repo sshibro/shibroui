@@ -1,0 +1,5 @@
+node_modules/
+.DS_Store
+# eval run outputs live outside the repo; keep stray ones out too
+evals/workspace/
+*-workspace/

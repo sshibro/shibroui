@@ -1,0 +1,16 @@
+{
+  "fixtures": [
+    {
+      "url": "../evals/files/settings.html",
+      "mustFail": ["SU-6", "SU-9", "SU-17", "SU-44", "SU-45", "SU-46", "SU-50", "SU-58", "SU-70", "SU-93"],
+      "mustFlag": ["SU-7", "SU-15", "SU-16", "SU-61", "SU-62", "SU-63", "SU-71", "SU-72", "SU-78", "SU-82", "SU-85", "SU-86"],
+      "maxFails": 40
+    },
+    {
+      "url": "fixtures/good.html",
+      "mustFail": [],
+      "mustFlag": [],
+      "maxFails": 0
+    }
+  ]
+}

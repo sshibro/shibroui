@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workspace settings</title>
+<style>
+  body { margin: 0; font-family: -apple-system, system-ui, sans-serif; background: #f4f4f5; color: #18181b; }
+  nav { display: flex; gap: 24px; padding: 16px 32px; background: #fff; border-bottom: 1px solid #e4e4e7; }
+  nav a { color: #18181b; text-decoration: none; }
+  main { padding: 32px; }
+  h1 { font-size: 22px; margin: 0 0 8px; }
+  .intro { text-align: center; max-width: 520px; margin: 0 auto 24px; line-height: 1.5; }
+  .about { line-height: 1.5; }
+  .about a { color: #18181b; text-decoration: none; }
+  .hint { color: #9ca3af; font-size: 14px; }
+  .card { background: #fff; border-radius: 20px; padding: 8px; margin-bottom: 24px; }
+  .card .inner { padding: 16px; }
+  .cover { display: block; width: 100%; height: 120px; border-radius: 20px; background: #c7d2fe; }
+  .field { display: flex; flex-direction: column; gap: 16px; margin-bottom: 16px; }
+  .field input { background: #fff; border: none; padding: 10px; font: inherit; }
+  .field.error input { animation: shake 700ms; }
+  @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-30px); } 75% { transform: translateX(30px); } }
+  .search { display: flex; gap: 8px; margin-bottom: 16px; }
+  .search input { height: 32px; box-sizing: border-box; border: 1px solid #d4d4d8; border-radius: 6px; padding: 0 10px; }
+  .btn { height: 40px; padding: 0 16px; border: 0; border-radius: 8px; background: #2563eb; color: #fff; font: inherit; transition: transform 700ms linear; }
+  .btn:active { transform: scale(0.84); }
+  .btn:focus { outline: none; }
+  .btn-danger { background: #dc2626; }
+  .btn-yellow { background: #ffd000; color: #fff; }
+  .toolbar { display: flex; gap: 4px; }
+  .icon-btn { width: 24px; height: 24px; padding: 0; border: 0; background: #e4e4e7; border-radius: 4px; }
+  .icon-btn:focus { outline: none; }
+  .integration { display: flex; align-items: center; gap: 8px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: #22c55e; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { text-align: center; padding: 8px; border-bottom: 1px solid #e4e4e7; }
+  .actions { display: flex; gap: 8px; }
+  .empty { color: #71717a; }
+</style>
+</head>
+<body>
+<nav><a href="/workspace">Workspace</a><a href="/members">Members</a><a href="/billing">Billing</a></nav>
+<main>
+  <h1>Organization settings</h1>
+  <p class="intro">Manage how your workspace looks, who can join it, which tools are connected and how much of your plan you have used this month. Changes apply to every member right away.</p>
+  <p class="about">Your workspace keeps every project, note and file your team creates in one place. Members can join with an invite link, and admins decide which integrations are allowed, how long files are kept, and who can see billing details for the whole organization. If you want to learn more about roles, <a href="/docs/roles">read about member roles</a> or <a href="/docs">click here</a> to open the full documentation for workspaces.</p>
+
+  <section class="card">
+    <span class="cover"></span>
+    <div class="inner">
+      <div class="toolbar">
+        <button class="icon-btn" aria-label="Edit cover">✎</button>
+        <button class="icon-btn" aria-label="Share">⇪</button>
+        <button class="icon-btn" aria-label="More">⋯</button>
+      </div>
+      <div class="field"><label for="name">Display name</label><input id="name" value="Northstar Studio"></div>
+      <div class="field error"><label for="email">Billing email</label><input id="email" value="billing@northstar"></div>
+      <p class="hint">Name: Northstar Studio · Email: billing@northstar.studio</p>
+      <div><input type="checkbox" id="news"> <span>Email me about product news</span></div>
+      <div class="actions">
+        <button class="btn">Save</button>
+        <button class="btn">Export</button>
+        <button class="btn btn-danger">Delete account</button>
+        <button class="btn btn-yellow">Save changes</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card"><div class="inner">
+    <h2>Integrations</h2>
+    <div class="integration"><span class="dot"></span><span>Slack</span></div>
+    <div class="search"><input placeholder="Search members"><button class="btn">Search</button></div>
+    <table>
+      <thead><tr><th>Member</th><th>Projects</th><th>Storage</th></tr></thead>
+      <tbody>
+        <tr><td>Maya Chen</td><td>12</td><td>1,264.50</td></tr>
+        <tr><td>Noah Williams</td><td>8</td><td>325.00</td></tr>
+        <tr><td>Sofia Ramirez</td><td>3</td><td>17.25</td></tr>
+      </tbody>
+    </table>
+    <p class="empty">No results.</p>
+    <button class="btn">Leave team</button>
+  </div></section>
+</main>
+</body>
+</html>

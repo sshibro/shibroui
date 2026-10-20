@@ -18,6 +18,10 @@
       if (!box || box.width < 1) continue;
       checked('text elements');
       const style = css(el);
+      // Gradient text paints its glyphs with the background, so `color` says nothing; SU-255 handles it.
+      const clipped = [el, el.parentElement, el.parentElement && el.parentElement.parentElement].filter(Boolean)
+        .some((node) => /text/.test(css(node).backgroundClip || css(node).webkitBackgroundClip || ''));
+      if (clipped) { skipped('gradient text (judged by SU-255, not SU-45)'); continue; }
       const size = px(style.fontSize);
       const large = size >= LIMITS.largePx || (size >= LIMITS.largeBoldPx && px(style.fontWeight) >= 700);
       const needed = large ? LIMITS.textLarge : LIMITS.textAA;

@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Billing console (components, problems)</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; padding-bottom: 120px; font: 16px/1.5 -apple-system, system-ui, sans-serif; background: #fff; color: #18181b; }
+  main { max-width: 960px; padding: 24px; }
+  h1 { font-size: 28px; line-height: 1.2; margin: 0 0 16px; }
+  h2 { font-size: 18px; margin: 32px 0 12px; }
+  .btn { height: 44px; padding: 0 16px; border: 1px solid #a1a1aa; border-radius: 8px; background: #fff; color: #18181b; font: inherit; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  /* tables */
+  table.data { border-collapse: collapse; width: 100%; }
+  .data th, .data td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #d4d4d8; }
+  .data .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .data tr.roomy td { padding: 24px 12px; }
+  table.fixed { table-layout: fixed; width: 420px; }
+  td.amount { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .scroller { overflow-x: auto; max-width: 480px; border: 1px solid #d4d4d8; }
+  table.wide { min-width: 900px; }
+  th button.sort { display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 4px; border: 0; background: none; font: inherit; font-weight: 600; color: #18181b; }
+
+  /* navigation */
+  nav ul, nav ol { display: flex; gap: 8px; margin: 0 0 16px; padding: 0; list-style: none; }
+  nav a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; color: #1d4ed8; }
+  nav a.active { border-bottom: 2px solid #1d4ed8; }
+  nav a[data-here] { font-weight: 700; background: #e0e7ff; }
+
+  /* menus and tooltips */
+  .menu { width: 220px; margin: 0 0 16px; padding: 4px; border: 1px solid #d4d4d8; border-radius: 8px; background: #fff; }
+  .mi { display: block; width: 100%; height: 28px; padding: 0 12px; border: 0; background: transparent; text-align: left; font: inherit; font-size: 14px; color: #18181b; }
+  .menu.mid .mi { height: 36px; }
+  .mi.danger { color: #b42318; }
+  .tip { display: inline-block; max-width: 280px; padding: 6px 8px; border-radius: 6px; background: #18181b; color: #fff; font-size: 13px; line-height: 1.4; }
+  .tip a { color: #bfdbfe; }
+  .tips { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+
+  /* toast, fab, bottom bar */
+  .bottom-bar { position: fixed; left: 0; right: 0; bottom: 0; height: 56px; background: #1e293b; }
+  .bottom-bar ul { margin: 0; justify-content: space-around; height: 56px; align-items: center; }
+  .bottom-bar a { color: #fff; }
+  .fab { position: fixed; right: 24px; bottom: 72px; width: 48px; height: 48px; border: 0; border-radius: 24px; background: #1d4ed8; color: #fff; font: inherit; }
+  .toast { position: fixed; right: 16px; bottom: 16px; width: 360px; height: 80px; padding: 12px 16px; display: flex; gap: 12px; align-items: center; border-radius: 8px; background: #18181b; color: #fff; z-index: 5; }
+  .toast button { height: 44px; padding: 0 12px; border: 1px solid #fff; border-radius: 8px; background: transparent; color: #fff; font: inherit; }
+
+  /* inputs */
+  .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px; }
+  .dropzone { height: 120px; display: flex; align-items: center; justify-content: center; border: 2px dashed #71717a; border-radius: 12px; color: #3f3f46; }
+  input[type=search], select, input[type=text] { height: 44px; padding: 0 12px; border: 1px solid #71717a; border-radius: 8px; font: inherit; }
+
+  /* dialog */
+  #dlg { width: 1200px; max-width: none; max-height: none; overflow: visible; padding: 24px; border: 0; border-radius: 12px; }
+  #dlg .field { display: block; margin-bottom: 40px; }
+  #dlg label { display: block; font-size: 14px; }
+  #dlg input { width: 100%; }
+  #dlg .actions { display: flex; gap: 12px; justify-content: flex-end; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Billing console</h1>
+
+  <h2>Invoices</h2>
+  <!-- SU-222: one row has 24px padding, the others 8px -->
+  <table class="data" id="invoices">
+    <caption class="sr-only">Invoices</caption>
+    <thead><tr><th scope="col">Invoice</th><th scope="col">Customer</th><th scope="col" class="num">Amount</th></tr></thead>
+    <tbody>
+      <tr><td>INV-2041</td><td>Northwind</td><td class="num">$1,240.00</td></tr>
+      <tr class="roomy"><td>INV-2042</td><td>Contoso</td><td class="num">$310.00</td></tr>
+      <tr><td>INV-2043</td><td>Fabrikam</td><td class="num">$87.50</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Payments</h2>
+  <!-- SU-223: the amount column is 64px wide and clips its numbers -->
+  <table class="data fixed" id="payments">
+    <caption class="sr-only">Payments</caption>
+    <colgroup><col style="width:120px"><col style="width:236px"><col style="width:64px"></colgroup>
+    <thead><tr><th scope="col">Payment</th><th scope="col">Method</th><th scope="col" class="num">Amount</th></tr></thead>
+    <tbody>
+      <tr><td>PAY-901</td><td>Visa ending 4242</td><td class="amount num">$1,248,300.00</td></tr>
+      <tr><td>PAY-902</td><td>Bank transfer</td><td class="amount num">$2,310,990.00</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Ledger</h2>
+  <!-- SU-223: scrolls sideways with no sticky first column and no edge cue -->
+  <div class="scroller" tabindex="0" role="region" aria-label="Ledger">
+    <table class="data wide" id="ledger">
+      <caption class="sr-only">Ledger</caption>
+      <thead><tr><th scope="col">Entry</th><th scope="col">Account</th><th scope="col">Region</th><th scope="col">Owner</th><th scope="col">Memo</th><th scope="col">Posted</th></tr></thead>
+      <tbody>
+        <tr><td>L-100</td><td>Receivables</td><td>EMEA</td><td>Ana</td><td>Quarterly true-up</td><td>2026-03-01</td></tr>
+        <tr><td>L-101</td><td>Payables</td><td>APAC</td><td>Ben</td><td>Vendor refund</td><td>2026-03-02</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Customers</h2>
+  <!-- SU-224: sort icons but no aria-sort; checkbox column with no header checkbox. SU-225: clickable rows with buttons -->
+  <table class="data" id="customers">
+    <caption class="sr-only">Customers</caption>
+    <thead>
+      <tr>
+        <th scope="col"><span class="sr-only">Select</span></th>
+        <th scope="col"><button type="button" class="sort">Customer <svg aria-hidden="true" width="12" height="12" viewBox="0 0 12 12"><path d="M6 2l4 5H2z" fill="currentColor"/></svg></button></th>
+        <th scope="col"><button type="button" class="sort">Plan <svg aria-hidden="true" width="12" height="12" viewBox="0 0 12 12"><path d="M6 10L2 5h8z" fill="currentColor"/></svg></button></th>
+        <th scope="col">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr onclick="location.hash = 'c1'"><td><input type="checkbox" aria-label="Select Northwind"></td><td>Northwind</td><td>Team</td><td><button type="button" class="btn">Edit</button> <button type="button" class="btn">Archive</button></td></tr>
+      <tr onclick="location.hash = 'c2'"><td><input type="checkbox" aria-label="Select Contoso"></td><td>Contoso</td><td>Solo</td><td><button type="button" class="btn">Edit</button> <button type="button" class="btn">Archive</button></td></tr>
+      <tr onclick="location.hash = 'c3'"><td><input type="checkbox" aria-label="Select Fabrikam"></td><td>Fabrikam</td><td>Team</td><td><button type="button" class="btn">Edit</button> <button type="button" class="btn">Archive</button></td></tr>
+    </tbody>
+  </table>
+
+  <h2>Navigation</h2>
+  <!-- SU-228: the active link is marked by class, and by weight and fill, but never by aria-current -->
+  <nav aria-label="Primary">
+    <ul><li><a href="#overview" class="active">Overview</a></li><li><a href="#invoices">Invoices</a></li><li><a href="#customers">Customers</a></li></ul>
+  </nav>
+  <nav aria-label="Account">
+    <ul><li><a href="#profile">Profile</a></li><li><a href="#team" data-here>Team</a></li><li><a href="#security">Security</a></li></ul>
+  </nav>
+  <!-- SU-231: the last crumb links to this very page -->
+  <nav aria-label="Breadcrumb">
+    <ol><li><a href="#home">Home</a></li><li><a href="#billing">Billing</a></li><li><a href="components-bad.html">Invoices</a></li></ol>
+  </nav>
+
+  <h2>Menus</h2>
+  <!-- SU-233: 28px items; a danger item with no separator before it -->
+  <div class="menu" role="menu" aria-label="Project actions">
+    <button type="button" role="menuitem" class="mi">Rename</button>
+    <button type="button" role="menuitem" class="mi">Duplicate</button>
+    <button type="button" role="menuitem" class="mi danger">Delete project</button>
+  </div>
+  <!-- 36px items: fine with a mouse, short on a phone -->
+  <div class="menu mid" role="menu" aria-label="Sort options">
+    <button type="button" role="menuitem" class="mi">Newest first</button>
+    <button type="button" role="menuitem" class="mi">Oldest first</button>
+  </div>
+
+  <h2>Tooltips</h2>
+  <!-- SU-234: a paragraph with a link in a tooltip; a tooltip on a disabled button -->
+  <div class="tips">
+    <div>
+      <button type="button" class="btn" aria-describedby="tip-long">Export</button>
+      <div role="tooltip" id="tip-long" class="tip">Exports every invoice in the current filter as a CSV file, including archived customers, refunded payments and drafts, and emails you a download link when it is ready. <a href="#help">Learn more</a></div>
+    </div>
+    <div>
+      <button type="button" class="btn" disabled aria-describedby="tip-off">Send reminder</button>
+      <div role="tooltip" id="tip-off" class="tip">Add a recipient first</div>
+    </div>
+  </div>
+
+  <h2>Settings</h2>
+  <!-- SU-240: a switch in a form that also has a submit button -->
+  <form action="#" onsubmit="return false">
+    <div class="row">
+      <label for="digest">Email me a weekly digest</label>
+      <input type="checkbox" role="switch" id="digest" aria-checked="false">
+    </div>
+    <!-- SU-241: a select with three options; a radio group with eight -->
+    <div class="row">
+      <label for="cycle">Billing cycle</label>
+      <select id="cycle"><option>Monthly</option><option>Quarterly</option><option>Annual</option></select>
+    </div>
+    <fieldset>
+      <legend>Plan</legend>
+      <div class="row">
+        <label><input type="radio" name="plan" value="1"> Free</label><label><input type="radio" name="plan" value="2"> Solo</label>
+        <label><input type="radio" name="plan" value="3"> Team</label><label><input type="radio" name="plan" value="4"> Business</label>
+        <label><input type="radio" name="plan" value="5"> Scale</label><label><input type="radio" name="plan" value="6"> Growth</label>
+        <label><input type="radio" name="plan" value="7"> Enterprise</label><label><input type="radio" name="plan" value="8"> Custom</label>
+      </div>
+    </fieldset>
+    <button type="submit" class="btn">Save settings</button>
+  </form>
+
+  <h2>Files and search</h2>
+  <!-- SU-243: a drop zone with no file input and no button -->
+  <div class="dropzone" ondragover="event.preventDefault()" ondrop="event.preventDefault()">Drop invoices here</div>
+  <!-- SU-244: a 110px search box -->
+  <div class="row"><label for="q">Search invoices</label><input type="search" id="q" style="width:110px" placeholder="Search"></div>
+
+  <h2>Dialog</h2>
+  <button type="button" class="btn" id="open-dialog" onclick="document.getElementById('dlg').showModal()">New customer</button>
+  <!-- SU-236: 1200px wide, taller than the screen, no inner scroll, eight fields -->
+  <dialog id="dlg" aria-labelledby="dlg-title">
+    <form method="dialog">
+      <h2 id="dlg-title">New customer</h2>
+      <div class="field"><label for="f1">Company</label><input type="text" id="f1"></div>
+      <div class="field"><label for="f2">Contact name</label><input type="text" id="f2"></div>
+      <div class="field"><label for="f3">Email</label><input type="text" id="f3"></div>
+      <div class="field"><label for="f4">Phone</label><input type="text" id="f4"></div>
+      <div class="field"><label for="f5">Address</label><input type="text" id="f5"></div>
+      <div class="field"><label for="f6">City</label><input type="text" id="f6"></div>
+      <div class="field"><label for="f7">Postal code</label><input type="text" id="f7"></div>
+      <div class="field"><label for="f8">Tax ID</label><input type="text" id="f8"></div>
+      <div class="actions"><button value="cancel" class="btn">Cancel</button><button value="ok" class="btn">Create</button></div>
+    </form>
+  </dialog>
+</main>
+
+<!-- SU-238: the toast sits on the chat button and on the bottom bar -->
+<div class="bottom-bar"><nav aria-label="Sections"><ul><li><a href="#home">Home</a></li><li><a href="#bills">Bills</a></li><li><a href="#more">More</a></li></ul></nav></div>
+<button type="button" class="fab" aria-label="Chat with support">Chat</button>
+<div class="toast" role="status"><span>Invoice INV-2041 sent to Northwind</span><button type="button">Undo</button></div>
+</body>
+</html>

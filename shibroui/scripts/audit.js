@@ -401,6 +401,10 @@
       if (!box || box.width < 1) continue;
       checked('text elements');
       const style = css(el);
+      // Gradient text paints its glyphs with the background, so `color` says nothing; SU-255 handles it.
+      const clipped = [el, el.parentElement, el.parentElement && el.parentElement.parentElement].filter(Boolean)
+        .some((node) => /text/.test(css(node).backgroundClip || css(node).webkitBackgroundClip || ''));
+      if (clipped) { skipped('gradient text (judged by SU-255, not SU-45)'); continue; }
       const size = px(style.fontSize);
       const large = size >= LIMITS.largePx || (size >= LIMITS.largeBoldPx && px(style.fontWeight) >= 700);
       const needed = large ? LIMITS.textLarge : LIMITS.textAA;
@@ -509,6 +513,8 @@
       checked('interactive targets');
       const isField = el.matches(TEXT_FIELD);
       if (isField && rect.height >= 32) continue;
+      // Menu items and options are specced at 32–40px with a pointer (SU-233); the 44px goal applies on touch widths.
+      if (el.matches('[role^=menuitem], [role=option]') && rect.height >= 32 && innerWidth > LIMITS.narrowViewport) { checked('menu items at pointer size (SU-233)'); continue; }
       // A target under an open dropdown or popover isn't reachable right now; it's audited in the closed state.
       const centerHit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
       if (centerHit && !el.contains(centerHit) && !related.some((n) => n.contains(centerHit)) && !centerHit.contains(el)) { skipped('target covered by an overlay'); continue; }
@@ -2036,6 +2042,1154 @@
     }
   }
   REGISTERED = [...REGISTERED, ['control rows', () => checkControlRows()], ['baselines', () => checkBaselines()]];
+  // ---------- Long pages: anchors, reveals, heading proximity, code blocks (SU-207, SU-209, SU-220, SU-221) ----------
+  const LP_LIMITS = {
+    headerMinWidth: 0.6, headerMinHeight: 40, headerTopSlack: 8, headerClearance: 16, tallViewports: 4, minProse: 12, proseChars: 80,
+    tocLinks: 3, contentChars: 20, minRevealSize: 8, maxAnchors: 400, maxHeadings: 400, maxRevealTargets: 20, maxRules: 600, maxCodeBlocks: 100,
+  };
+  const LP_SKIP_TARGET = /^(main|main-content|maincontent|content)$/i;
+  const LP_NOT_AN_ANCHOR = '[role=tab], [role=button], [aria-controls], [aria-expanded], [data-toggle], [data-bs-toggle]';
+  const LP_FIX_REVEAL = 'Gate the hidden start state on a class JS sets (html.js .reveal), so content is visible without JS, in print and in headless renders';
+  const LP_GATE = /(?:^|[\s>+~(])(?:html|body|:root)(?:\.[\w-]+|\[[^\]]+\]|:not\()|^\.(?:js|has-js|js-[\w-]+|enhanced)(?![\w-])/;
+  const LP_REVEAL_STATE = /:hover|:focus|:active|:checked|:target|:disabled|:popover-open|:open|::|\[aria-|\[data-state|\[open|\[hidden/;
+  const LP_NOT_A_REVEAL = /tooltip|toast|snackbar|popover|dropdown|modal|dialog|overlay|backdrop|drawer|sr-only|visually-hidden|skeleton|spinner|loader|ripple|cursor/i;
+  const LP_OVERLAY_ANCESTOR = '[popover], dialog, [role=dialog], [role=tooltip], [role=menu], [role=listbox], [role=alert], [role=status], [aria-hidden=true], [inert], details:not([open])';
+  const LP_HEADING_SKIP = 'nav, header, footer, button, label, summary, dialog, [role=dialog], [role=alertdialog], [popover], th, td, caption, [role=tab], [role=button], [aria-hidden=true]';
+  const LP_HEADINGS = 'h2, h3, h4';
+
+  // A rule inside a media query that does not match this viewport never applies.
+  function lpRuleApplies(rule) {
+    for (let parent = rule.parentRule; parent; parent = parent.parentRule) {
+      if (parent instanceof CSSMediaRule && !matchMedia(parent.media.mediaText).matches) return false;
+    }
+    return true;
+  }
+  const lpRuleGated = (rule) => {
+    for (let parent = rule.parentRule; parent; parent = parent.parentRule) {
+      if (parent instanceof CSSMediaRule && /scripting\s*:\s*enabled/.test(parent.conditionText || parent.media.mediaText)) return true;
+    }
+    return false;
+  };
+
+  // ----- SU-207: sticky header vs in-page anchors, and a table of contents on long reading pages -----
+  function lpTargetOf(link) {
+    const href = link.getAttribute('href') || '';
+    if (href.length < 2) return null;
+    let id = href.slice(1);
+    try { id = decodeURIComponent(id); } catch { /* keep the raw id */ }
+    if (LP_SKIP_TARGET.test(id)) return null;
+    const target = document.getElementById(id);
+    return target && !target.matches('main') ? target : null;
+  }
+  function lpAnchors() {
+    return [...ROOT.querySelectorAll('a[href^="#"]')].slice(0, LP_LIMITS.maxAnchors)
+      .filter((link) => !link.matches(LP_NOT_AN_ANCHOR) && isVisible(link))
+      .flatMap((link) => { const target = lpTargetOf(link); return target ? [{ link, target }] : []; });
+  }
+  // The outermost fixed/sticky bar stuck to the top edge: wide, and tall enough to cover content.
+  function lpPinnedHeader() {
+    const bars = pinnedLayers().filter((layer) => {
+      const style = css(layer);
+      const rect = layer.getBoundingClientRect();
+      return style.top !== 'auto' && px(style.top) <= LP_LIMITS.headerTopSlack
+        && rect.width >= innerWidth * LP_LIMITS.headerMinWidth && rect.height >= LP_LIMITS.headerMinHeight;
+    });
+    return bars.reduce((tallest, bar) => (!tallest || bar.getBoundingClientRect().height > tallest.getBoundingClientRect().height ? bar : tallest), null);
+  }
+  function lpCheckAnchorOffsets(anchors) {
+    const header = lpPinnedHeader();
+    if (!header || !anchors.length) return;
+    checked('pinned headers');
+    checked('in-page anchors', anchors.length);
+    const height = Math.round(header.getBoundingClientRect().height);
+    const rootPadding = px(css(document.documentElement).scrollPaddingTop);
+    const covered = anchors.filter(({ target }) => px(css(target).scrollMarginTop) + rootPadding < height);
+    if (!covered.length) return;
+    const offset = Math.min(...covered.map(({ target }) => px(css(target).scrollMarginTop) + rootPadding));
+    const clearance = height + LP_LIMITS.headerClearance;
+    add('SU-207', 'warn', 'Stay oriented on long pages', header,
+      `a ${height}px pinned header covers the top of ${covered.length} of ${anchors.length} in-page anchor target(s) after a jump (scroll offset ${offset}px)`,
+      `html { scroll-padding-top: ${clearance}px }, or [id] { scroll-margin-top: ${clearance}px }, so a jumped-to heading lands below the header`);
+  }
+  // Three or more in-page links inside one nav or list are a table of contents.
+  function lpHasToc(anchors) {
+    const counts = anchors.reduce((map, { link }) => {
+      const group = link.closest('nav, ul, ol, [role=navigation]');
+      return group ? new Map([...map, [group, new Set([...(map.get(group) || []), link.getAttribute('href')])]]) : map;
+    }, new Map());
+    return [...counts.values()].some((hrefs) => hrefs.size >= LP_LIMITS.tocLinks);
+  }
+  function lpCheckToc(anchors) {
+    const viewports = document.documentElement.scrollHeight / innerHeight;
+    if (viewports < LP_LIMITS.tallViewports) return;
+    const prose = [...ROOT.querySelectorAll('p')].filter((p) => p.closest('main, article') && p.getClientRects().length > 0
+      && p.textContent.trim().length >= LP_LIMITS.proseChars).length;
+    if (prose < LP_LIMITS.minProse) return;
+    checked('long reading pages');
+    if (lpHasToc(anchors)) return;
+    add('SU-207', 'info', 'Stay oriented on long pages', null,
+      `${viewports.toFixed(1)} screens of prose (${prose} paragraphs) and no table of contents`,
+      'Add a table of contents (a nav of in-page links) at the top of the article, sticky in a side rail from ~1200px wide, with the current section marked aria-current="true"');
+  }
+
+  // ----- SU-209: scroll reveals that hide content without a JS-set gate -----
+  const lpDurationsMs = (value) => String(value || '').split(',').map((v) => (v.trim().endsWith('ms') ? px(v) : px(v) * 1000));
+  // 'transition' | 'animation' | '' : what moves the element's opacity or transform at rest.
+  function lpRevealMotion(style) {
+    const properties = String(style.transitionProperty || '').split(',').map((p) => p.trim());
+    const times = lpDurationsMs(style.transitionDuration);
+    const transitions = properties.some((prop, i) => /^(all|opacity|transform)$/.test(prop) && times[i % times.length] > 0);
+    if (transitions) return 'transition';
+    return style.animationName && style.animationName !== 'none' && lpDurationsMs(style.animationDuration).some((ms) => ms > 0) ? 'animation' : '';
+  }
+  function lpHoldsContent(el) {
+    if (el.textContent.trim().length < LP_LIMITS.contentChars || el.matches(LP_OVERLAY_ANCESTOR) || el.closest(LP_OVERLAY_ANCESTOR)) return false;
+    const style = css(el);
+    if (/absolute|fixed/.test(style.position) || style.display === 'none' || style.visibility === 'hidden') return false;
+    const rect = el.getBoundingClientRect();
+    return rect.width >= LP_LIMITS.minRevealSize && rect.height >= LP_LIMITS.minRevealSize;
+  }
+  function lpCheckRevealGates({ rules }) {
+    const seen = new Set();
+    let examined = 0;
+    for (const { rule, inReduced } of rules) {
+      if (inReduced || examined >= LP_LIMITS.maxRules || !/^0(\.0+)?%?$/.test(rule.style.opacity.trim())) continue;
+      if (!lpRuleApplies(rule) || lpRuleGated(rule)) continue;
+      for (const part of splitSelectorList(rule.selectorText || '').map((p) => p.trim()).filter(Boolean)) {
+        if (seen.has(part) || LP_REVEAL_STATE.test(part) || LP_GATE.test(part) || LP_NOT_A_REVEAL.test(part)) continue;
+        seen.add(part);
+        examined += 1;
+        let matches = [];
+        try { matches = [...ROOT.querySelectorAll(part)].slice(0, LP_LIMITS.maxRevealTargets); } catch { continue; }
+        for (const el of matches) {
+          if (!lpHoldsContent(el)) continue;
+          checked('hidden-at-rest content blocks');
+          const motion = lpRevealMotion(css(el));
+          if (!motion) continue;
+          add('SU-209', 'warn', 'Scroll reveals enhance; they never hide', el,
+            `${part} starts at opacity: 0 with a ${motion} and no JS-set gate on html/body, so the content stays invisible without JS, in print and in headless renders`,
+            LP_FIX_REVEAL);
+        }
+      }
+    }
+  }
+  // The core prepare sweep lists reveals that were already in the first screen at load.
+  function lpCheckPreparedReveals() {
+    if (typeof PREPARED === 'undefined' || !PREPARED || !PREPARED.hiddenInFirstViewport) return;
+    for (const el of PREPARED.hiddenInFirstViewport) {
+      checked('reveals in the first screen');
+      add('SU-209', 'warn', 'Scroll reveals enhance; they never hide', el, 'hidden at load although it was already in the first screen', LP_FIX_REVEAL);
+    }
+  }
+
+  // ----- SU-220: a heading belongs to what follows -----
+  const lpInFlow = (el) => {
+    const style = css(el);
+    return style.display !== 'none' && style.visibility !== 'hidden' && !/absolute|fixed/.test(style.position) && el.getBoundingClientRect().height > 0;
+  };
+  const lpSiblingAbove = (el) => { for (let node = el.previousElementSibling; node; node = node.previousElementSibling) if (lpInFlow(node)) return node; return null; };
+  const lpSiblingBelow = (el) => { for (let node = el.nextElementSibling; node; node = node.nextElementSibling) if (lpInFlow(node)) return node; return null; };
+  function lpHeadingGaps(heading) {
+    const [above, below] = [lpSiblingAbove(heading), lpSiblingBelow(heading)];
+    if (!above || !below || above.matches('h1, h2, h3, h4, h5, h6')) return null;
+    const [h, a, b] = [heading, above, below].map((node) => node.getBoundingClientRect());
+    // Side by side (a flex row, a floated figure) is not a stack: there is no vertical gap to compare.
+    if (a.bottom > h.top + 1 || b.top < h.bottom - 1) return null;
+    return { spaceAbove: Math.max(0, h.top - a.bottom), spaceBelow: Math.max(0, b.top - h.bottom) };
+  }
+  function lpCheckHeadingProximity() {
+    for (const heading of [...ROOT.querySelectorAll(LP_HEADINGS)].slice(0, LP_LIMITS.maxHeadings)) {
+      if (heading.closest(LP_HEADING_SKIP) || !isVisible(heading) || !heading.textContent.trim()) continue;
+      const gaps = lpHeadingGaps(heading);
+      if (!gaps) continue;
+      checked('headings (space above vs below)');
+      const { spaceAbove, spaceBelow } = gaps;
+      if (Math.round(spaceBelow) < Math.round(spaceAbove)) continue;
+      add('SU-220', 'warn', 'Headings belong to what follows', heading,
+        `${heading.tagName.toLowerCase()} has ${Math.round(spaceBelow)}px of space below and ${Math.round(spaceAbove)}px above: it reads as the end of the previous block, not the start of its own`,
+        'Space above a heading ≈ 1.5–2× the space below it (margin-top: 1.5em; margin-bottom: 0.5em), so it groups with the content that follows');
+    }
+  }
+
+  // ----- SU-221: a code block that neither scrolls nor wraps -----
+  function lpCheckCodeBlocks() {
+    for (const block of [...ROOT.querySelectorAll('pre')].slice(0, LP_LIMITS.maxCodeBlocks)) {
+      if (!isVisible(block)) continue;
+      checked('code blocks');
+      const overflowX = css(block).overflowX;
+      const overflow = block.scrollWidth - block.clientWidth;
+      if (!/^(visible|hidden|clip)$/.test(overflowX) || overflow <= 1) continue;
+      add('SU-221', 'warn', 'Code blocks read and copy cleanly', block,
+        `pre content is ${block.scrollWidth}px wide in a ${block.clientWidth}px box and does not scroll (overflow-x: ${overflowX}): it spills out or is clipped`,
+        'overflow-x: auto on the pre, with tabindex="0" and an aria-label so keyboard users can scroll it, and never let it widen the page');
+    }
+  }
+
+  function checkLongPages(context) {
+    const anchors = lpAnchors();
+    lpCheckAnchorOffsets(anchors);
+    lpCheckToc(anchors);
+    lpCheckRevealGates(context);
+    lpCheckPreparedReveals();
+  }
+  REGISTERED = [...REGISTERED, ['long pages', (context) => checkLongPages(context)], ['heading proximity', () => lpCheckHeadingProximity()],
+    ['code blocks', () => lpCheckCodeBlocks()]];
+  // ---------- Visual craft: gradients, display type, imagery, logos, finishes (SU-255, SU-258, SU-259, SU-260, SU-263) ----------
+  const CR_LIMITS = {
+    midpointChromaShare: 0.6, minMeanChroma: 0.06, minStopAlpha: 0.85,
+    gradientTextInfoPx: 32, displayPx: 48, displayLeading: 1.2,
+    imageMinWidth: 64, imageMinShare: 0.75, imageMaxDpr: 2,
+    logoMinCount: 4, logoMaxWidth: 240, logoMaxHeight: 120, logoRowTolerance: 8, logoAreaRatio: 1.4,
+    scrollerMinHeight: 120, scrollerMaxShare: 0.8,
+  };
+  const CR_GRADIENT = /(?:repeating-)?(?:linear|radial|conic)-gradient\(/;
+  const CR_PERCEPTUAL_SPACE = /\bin\s+(?:oklch|oklab|lab|lch)\b/;
+  const CR_COLOR_FUNCTION = /(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color|color-mix)\((?:[^()]|\([^()]*\))*\)/g;
+  const CR_RASTER_SKIP = /\.svg(?:[?#]|$)|^data:image\/svg/i;
+  const CR_RTL_OR_CJK = /[֐-ࣿऀ-෿぀-鿿가-힯]/;
+  const CR_SCROLL_LOCK_CLASS = /\b(?:no-?scroll|scroll-?lock(?:ed)?|modal-open|overflow-hidden|is-locked|lock-scroll)\b/;
+  const CR_NATIVE_CHOICE = 'input[type=checkbox], input[type=radio], input[type=range]';
+  const CR_ALL_ELEMENTS = () => [...ROOT.querySelectorAll('*')].slice(0, LIMITS.maxElements);
+
+  // sRGB (0–255 channels) → OKLCH, with only the chroma and hue the checks need.
+  function crOklch(color) {
+    const [r, g, b] = [linear(color.r), linear(color.g), linear(color.b)];
+    const [l, m, s] = [
+      Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b),
+      Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b),
+      Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b),
+    ];
+    const a = 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s;
+    const bAxis = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s;
+    return { L: 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s, C: Math.hypot(a, bAxis) };
+  }
+  // Splits a computed background-image on its top-level commas (one string per layer).
+  function crSplitLayers(value) {
+    const layers = [];
+    let depth = 0;
+    let start = 0;
+    [...value].forEach((char, i) => {
+      if (char === '(') depth += 1;
+      else if (char === ')') depth -= 1;
+      else if (char === ',' && depth === 0) { layers.push(value.slice(start, i).trim()); start = i + 1; }
+    });
+    return [...layers, value.slice(start).trim()].filter(Boolean);
+  }
+  const crOwnText = (el) => [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim().length > 0);
+  const crTransparentText = (style) => parseColor(style.color).a === 0 || parseColor(style.webkitTextFillColor).a === 0;
+
+  // The first adjacent pair of opaque stops whose sRGB midpoint loses most of the stops' chroma, or null.
+  function crMuddyPair(layer) {
+    const stops = (layer.match(CR_COLOR_FUNCTION) || []).map(parseColor);
+    for (let i = 1; i < stops.length; i += 1) {
+      const [from, to] = [stops[i - 1], stops[i]];
+      if (Math.min(from.a, to.a) < CR_LIMITS.minStopAlpha) continue;
+      const midpoint = { r: (from.r + to.r) / 2, g: (from.g + to.g) / 2, b: (from.b + to.b) / 2 };
+      const mean = (crOklch(from).C + crOklch(to).C) / 2;
+      const middle = crOklch(midpoint).C;
+      if (mean >= CR_LIMITS.minMeanChroma && middle < CR_LIMITS.midpointChromaShare * mean) return { mean, middle, from, to };
+    }
+    return null;
+  }
+  function checkGradients() {
+    for (const el of CR_ALL_ELEMENTS()) {
+      const style = css(el);
+      if (!CR_GRADIENT.test(style.backgroundImage) || !isVisible(el)) continue;
+      checked('gradients');
+      for (const layer of crSplitLayers(style.backgroundImage)) {
+        if (!CR_GRADIENT.test(layer) || CR_PERCEPTUAL_SPACE.test(layer)) continue;
+        const pair = crMuddyPair(layer);
+        if (!pair) continue;
+        const share = Math.round((pair.middle / pair.mean) * 100);
+        add('SU-255', 'warn', 'Gradients interpolate in OKLCH', el,
+          `sRGB gradient ${hex(pair.from)} to ${hex(pair.to)}: the midpoint keeps ${share}% of the stops' chroma (muddy middle)`,
+          'linear-gradient(in oklch, …) or stops with neighbouring hues, 2–3 stops');
+      }
+      const clipsToText = /\btext\b/.test(style.backgroundClip) || /\btext\b/.test(style.webkitBackgroundClip);
+      if (!clipsToText || !crTransparentText(style) || !el.textContent.trim()) continue;
+      checked('gradient text');
+      const size = px(style.fontSize);
+      if (size < CR_LIMITS.gradientTextInfoPx) {
+        add('SU-255', 'warn', 'No gradient text', el, `gradient text at ${Math.round(size)}px`, 'Use a solid text color; if the brand needs a gradient, display sizes (≥ 32px) only');
+      } else {
+        add('SU-255', 'info', 'No gradient text', el, `gradient text at ${Math.round(size)}px: measure contrast at the weakest stop`, 'Check ≥ 4.5:1 (3:1 for large text) against the page at the stop with the least contrast');
+      }
+    }
+  }
+
+  // Display type (≥ 48px) is set, not scaled: tracked in and tightly led.
+  function checkDisplayType() {
+    for (const el of CR_ALL_ELEMENTS()) {
+      if (!crOwnText(el) || el.closest('svg, input, textarea, select, option')) continue;
+      const style = css(el);
+      const size = px(style.fontSize);
+      if (size < CR_LIMITS.displayPx || !isVisible(el)) continue;
+      if (CR_RTL_OR_CJK.test(el.textContent) || style.direction === 'rtl') { skipped('display type (connected or CJK script)'); continue; }
+      checked('display text');
+      if (px(style.letterSpacing) >= 0) {
+        add('SU-258', 'warn', 'Display type is set, not scaled', el, `${Math.round(size)}px text with letter-spacing ${style.letterSpacing}`, 'letter-spacing: -0.02em to -0.04em at display sizes');
+      }
+      const leading = style.lineHeight === 'normal' ? 0 : px(style.lineHeight) / size;
+      if (leading > CR_LIMITS.displayLeading) {
+        add('SU-258', 'warn', 'Display type is set, not scaled', el, `${Math.round(size)}px text with line-height ${Math.round(leading * 100) / 100}`, 'line-height: 1.0–1.1 at display sizes');
+      }
+    }
+  }
+
+  // Raster images shown larger than their pixels can fill at the display density.
+  function checkImageSharpness() {
+    const density = Math.min(devicePixelRatio || 1, CR_LIMITS.imageMaxDpr);
+    for (const img of ROOT.querySelectorAll('img')) {
+      const source = img.currentSrc || img.src;
+      if (!source || CR_RASTER_SKIP.test(source) || css(img).imageRendering === 'pixelated' || !isVisible(img)) continue;
+      const shown = img.getBoundingClientRect().width;
+      if (shown < CR_LIMITS.imageMinWidth) continue;
+      if (!img.complete || !img.naturalWidth) { skipped('images not loaded yet (sharpness)'); continue; }
+      checked('raster image sharpness');
+      if (img.naturalWidth < CR_LIMITS.imageMinShare * shown * density) {
+        add('SU-259', 'warn', 'Product imagery is crisp', img,
+          `naturalWidth ${img.naturalWidth}px is shown at ${Math.round(shown)}px (${Math.round((img.naturalWidth / shown) * 100) / 100}× the rendered width, needs ≥ ${CR_LIMITS.imageMinShare * density}× at ${density}× density)`,
+          'Export the image at 2× its rendered width (srcset with 1x/2x, or a source twice as wide)');
+      }
+    }
+  }
+
+  // Logo rows: ≥ 4 sibling images/SVGs (or links/items wrapping just one) on one line, each logo-sized.
+  const crLogoMark = (child) => {
+    if (child.matches('img, svg')) return child;
+    if (!child.matches('a, li, div, span, picture') || child.textContent.trim()) return null;
+    const media = child.querySelectorAll('img, svg');
+    return media.length === 1 ? media[0] : null;
+  };
+  function crLogoRow(marks) {
+    const sized = marks.map((mark) => ({ mark, rect: mark.getBoundingClientRect() }))
+      .filter(({ rect }) => rect.width <= CR_LIMITS.logoMaxWidth && rect.height <= CR_LIMITS.logoMaxHeight);
+    const centerY = ({ rect }) => rect.top + rect.height / 2;
+    const rows = sized.reduce((found, item) => {
+      const index = found.findIndex((row) => Math.abs(centerY(row[0]) - centerY(item)) <= CR_LIMITS.logoRowTolerance);
+      return index < 0 ? [...found, [item]] : found.map((row, i) => (i === index ? [...row, item] : row));
+    }, []);
+    return rows.filter((row) => row.length >= CR_LIMITS.logoMinCount).sort((a, b) => b.length - a.length)[0] || null;
+  }
+  function checkLogoRows() {
+    for (const container of CR_ALL_ELEMENTS()) {
+      if (container.childElementCount < CR_LIMITS.logoMinCount || container.matches('svg, svg *, picture, select')) continue;
+      const marks = [...container.children].filter(isVisible).map(crLogoMark).filter((mark) => mark && isVisible(mark));
+      if (marks.length < CR_LIMITS.logoMinCount) continue;
+      const row = crLogoRow(marks);
+      if (!row) continue;
+      checked('logo rows');
+      const areas = row.map(({ rect }) => rect.width * rect.height);
+      const [smallest, largest] = [Math.min(...areas), Math.max(...areas)];
+      if (smallest <= 0 || largest / smallest <= CR_LIMITS.logoAreaRatio) continue;
+      add('SU-260', 'info', 'Logos are balanced by area', container,
+        `${row.length} logos differ in area by ${Math.round((largest / smallest - 1) * 100)}% (${Math.round(smallest)} to ${Math.round(largest)} px²)`,
+        'Scale logos so their area matches (±15%): wide wordmarks shorter, square marks taller, on one baseline row');
+    }
+  }
+
+  // The small finishes (SU-263): one finding listing what is missing, never one per element.
+  const crInertOrHidden = (el) => !isVisible(el) || !!el.closest('[inert]');
+  const crContainsOverscroll = (el) => /contain|none/.test(css(el).overscrollBehaviorY);
+  function crCrossOriginSheets() {
+    return [...document.styleSheets].some((sheet) => { try { return !sheet.cssRules; } catch { return true; } });
+  }
+  function crScrollGutterMissing() {
+    const root = document.documentElement;
+    const locks = !!document.querySelector('dialog, [aria-modal]')
+      || CR_SCROLL_LOCK_CLASS.test(`${root.getAttribute('class') || ''} ${document.body.getAttribute('class') || ''}`);
+    if (!locks || root.scrollHeight <= innerHeight + 1) return false;
+    checked('scrollbar-gutter');
+    return !/stable/.test(css(root).scrollbarGutter) && !/stable/.test(css(document.body).scrollbarGutter);
+  }
+  function crOverscrollMissing() {
+    const dialogs = [...ROOT.querySelectorAll('dialog, [role=dialog], [role=alertdialog], [aria-modal=true]')];
+    const panels = CR_ALL_ELEMENTS().filter((el) => {
+      if (dialogs.includes(el) || el.matches('textarea, select, input, html, body') || crInertOrHidden(el)) return false;
+      const style = css(el);
+      if (!/auto|scroll/.test(style.overflowY) || el.scrollHeight <= el.clientHeight + 1) return false;
+      if (style.position === 'fixed') return true;
+      const height = el.getBoundingClientRect().height;
+      return height >= CR_LIMITS.scrollerMinHeight && height <= CR_LIMITS.scrollerMaxShare * innerHeight;
+    });
+    checked('overscroll containers', dialogs.length + panels.length);
+    return [...dialogs, ...panels].filter((el) => !crContainsOverscroll(el)).length;
+  }
+  function crSelectionStyled(rules) {
+    if (crCrossOriginSheets()) { skipped('::selection (cross-origin stylesheet)'); return true; }
+    checked('::selection rules');
+    return rules.some(({ rule }) => /::(?:-moz-)?selection/.test(rule.selectorText || ''));
+  }
+  function crAccentMissing() {
+    const controls = [...ROOT.querySelectorAll(CR_NATIVE_CHOICE)].filter((el) => !crInertOrHidden(el) && css(el).appearance !== 'none');
+    if (!controls.length) return false;
+    checked('native checkboxes, radios and ranges', controls.length);
+    return controls.some((el) => css(el).accentColor === 'auto');
+  }
+  // Computed caret-color resolves "auto" to the text color, so it can't tell set from unset: ask the rules
+  // (an ancestor match counts, the property inherits) and the inline style instead.
+  const crCaretSet = (field, rules) => !!field.style.caretColor || rules.some(({ rule }) => {
+    if (!rule.style.caretColor || rule.style.caretColor === 'auto') return false;
+    try { return !!field.closest(rule.selectorText); } catch { return false; }
+  });
+  function crCaretMissing(rules) {
+    const fields = [...ROOT.querySelectorAll(TEXT_FIELD)].filter((el) => !el.matches('select') && !crInertOrHidden(el));
+    if (!fields.length) return false;
+    if (crCrossOriginSheets()) { skipped('caret-color (cross-origin stylesheet)'); return false; }
+    checked('text fields (caret-color)', fields.length);
+    return fields.some((el) => !crCaretSet(el, rules));
+  }
+  function checkFinishes({ rules }) {
+    const overscroll = crOverscrollMissing();
+    const missing = [
+      crScrollGutterMissing() && 'scrollbar-gutter: stable on html (a dialog or scroll lock shifts the page)',
+      overscroll > 0 && `overscroll-behavior: contain on ${overscroll} dialog(s), drawer(s) or scroll panel(s)`,
+      !crSelectionStyled(rules) && '::selection in an accent tint',
+      crAccentMissing() && 'accent-color on :root (native checkboxes, radios or ranges)',
+      crCaretMissing(rules) && 'caret-color on text fields',
+    ].filter(Boolean);
+    if (!missing.length) return;
+    add('SU-263', 'info', 'The small finishes are on', document.documentElement, `missing finishes: ${missing.join('; ')}`,
+      'html { scrollbar-gutter: stable; accent-color: <accent> } ::selection { background: <accent tint> } input, textarea { caret-color: <accent> } dialog, .drawer, .scroll-panel { overscroll-behavior: contain }');
+  }
+  REGISTERED = [...REGISTERED, ['gradients', () => checkGradients()], ['display type', () => checkDisplayType()],
+    ['image sharpness', () => checkImageSharpness()], ['logo rows', () => checkLogoRows()], ['small finishes', (context) => checkFinishes(context)]];
+  // ---------- Component specs: data, navigation, overlays, inputs (SU-222 … SU-244) ----------
+  const CMP = {
+    rowSpread: 2, maxRows: 300, maxCells: 2000, slack: 1, overlap: 2,
+    menuItem: 32, menuItemTouch: 44, tooltipChars: 80, modalShare: 0.9, modalMinViewport: 768,
+    maxDialogFields: 6, maxRadios: 7, maxSelectOptions: 3, searchChars: 20, minZone: [100, 40], bottomSlack: 2, minWideColumns: 4,
+  };
+  const CMP_TABLE = 'table, [role=table], [role=grid]';
+  const CMP_ROW = 'tr, [role=row]';
+  const CMP_CELL = 'td, th, [role=cell], [role=gridcell], [role=columnheader], [role=rowheader]';
+  const CMP_CHECKBOX = 'input[type=checkbox], [role=checkbox]';
+  const CMP_BUTTON = 'button, [role=button], input[type=button], input[type=submit]';
+  const CMP_FOCUSABLE = 'a[href], button, input:not([type=hidden]), select, textarea, [tabindex]:not([tabindex="-1"])';
+  const CMP_TOAST = '[role=status], [role=alert], [class*=toast i], [class*=snackbar i]';
+  const CMP_NUMERIC = /^[+\-−]?\s?[$€£¥₹]?\s?[+\-−]?\d[\d,.\s ]*\s?(%|[a-zA-Z]{1,3})?$/;
+  const CMP_IDENTIFIER = /^[A-Z]{2,5}[-#]?\d{2,}$/;
+  const CMP_ACTIVE_CLASS = /(?:^|[^a-z])(?:active|current|selected)(?:[^a-z]|$)/i;
+  const CMP_CALL_TO_ACTION = /sign ?up|log ?in|get started|try|start|buy|subscribe|contact|book|demo|join|register/i;
+  const CMP_SORT_GLYPH = /[▲▼△▽↑↓⇅⇵▴▾]/;
+  const CMP_NOT_SORT = /filter|info|help|menu|more|resize|option|close|remove|setting/i;
+  const CMP_DANGER_CLASS = /danger|destructive|delete/i;
+  const CMP_ZONE_TOKEN = /(?:^|[-_])(?:drop(?:zone|area)?|upload(?:er)?)(?:$|[-_])|dropzone|drop-zone|file-?drop/i;
+  const CMP_ZONE_TAGS = /^(DIV|SECTION|LABEL|FORM|ASIDE|ARTICLE|FIELDSET)$/;
+  const CMP_BREADCRUMB = 'nav[aria-label*=readcrumb i], .breadcrumb, .breadcrumbs, [class~=breadcrumb]';
+
+  const cmpAll = (selector) => [...ROOT.querySelectorAll(selector)];
+  const cmpVisibleAll = (selector) => cmpAll(selector).filter(isVisible);
+  const cmpText = (el) => (el.textContent || '').trim().replace(/\s+/g, ' ');
+  const cmpTop = (rect) => Math.round(rect.top);
+  const cmpOverlaps = (a, b) => Math.min(a.right, b.right) - Math.max(a.left, b.left) > CMP.overlap
+    && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > CMP.overlap;
+  const cmpHasBorder = (el, side) => px(css(el)[`border${side}Width`]) > 0 && css(el)[`border${side}Style`] !== 'none';
+
+  // ----- tables: SU-222, SU-223, SU-224, SU-225 -----
+  const cmpRowsOf = (table) => [...table.querySelectorAll(CMP_ROW)].filter((row) => row.closest(CMP_TABLE) === table);
+  const cmpCellsOf = (row) => [...row.querySelectorAll(CMP_CELL)].filter((cell) => cell.closest(CMP_ROW) === row);
+  function cmpIsHeaderRow(row) {
+    if (row.closest('thead')) return true;
+    const cells = cmpCellsOf(row);
+    return cells.length > 0 && cells.every((cell) => cell.tagName === 'TH' || cell.getAttribute('role') === 'columnheader');
+  }
+  // A detail row (one cell spanning the table) is taller on purpose.
+  const cmpIsSpanningRow = (row) => { const cells = cmpCellsOf(row); return cells.length === 1 && (cells[0].colSpan > 1 || cells[0].hasAttribute('aria-colspan')); };
+  // Text that wrapped onto a second line makes its row taller than the rest; that is content, not a density bug.
+  function cmpWrapsText(row) {
+    const range = document.createRange();
+    const walker = document.createTreeWalker(row, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      if (!node.nodeValue.trim()) continue;
+      range.selectNodeContents(node);
+      const tops = [...range.getClientRects()].filter((rect) => rect.height > 0).map(cmpTop);
+      if (tops.length > 1 && Math.max(...tops) - Math.min(...tops) > 4) return true;
+    }
+    return false;
+  }
+  function cmpGroupByParent(rows) {
+    const groups = new Map();
+    rows.forEach((row) => groups.set(row.parentElement, [...(groups.get(row.parentElement) || []), row]));
+    return [...groups.values()];
+  }
+  function cmpCheckRowHeights() {
+    for (const table of cmpVisibleAll(CMP_TABLE)) {
+      const body = cmpRowsOf(table).filter((row) => !cmpIsHeaderRow(row) && isVisible(row));
+      for (const group of cmpGroupByParent(body)) {
+        if (group.length > CMP.maxRows) COVERAGE.capsHit.push(`table row heights checked the first ${CMP.maxRows} rows of a table body`);
+        const rows = group.slice(0, CMP.maxRows).filter((row) => !cmpIsSpanningRow(row) && !cmpWrapsText(row));
+        if (rows.length < 2) continue;
+        checked('table row heights');
+        const heights = rows.map((row) => row.getBoundingClientRect().height);
+        const [low, high] = [Math.min(...heights), Math.max(...heights)];
+        if (high - low <= CMP.rowSpread) continue;
+        add('SU-222', 'warn', 'One density per table', rows[heights.indexOf(high)], `row heights differ in one table body: ${Math.round(low)}px and ${Math.round(high)}px (not caused by wrapping)`, 'One row height per table (32 / 40 / 48px): the same cell padding and control size in every row');
+      }
+    }
+  }
+
+  // Text that is clipped by its own box (overflow hidden, with or without an ellipsis).
+  function cmpClippedBox(cell) {
+    return [cell, ...cell.querySelectorAll('*')].slice(0, 8).find((el) => {
+      const style = css(el);
+      return /hidden|clip/.test(style.overflowX) && el.clientWidth > 0 && el.scrollWidth > el.clientWidth + CMP.slack;
+    }) || null;
+  }
+  const cmpIsNumeric = (text) => text.length > 0 && text.length <= 24 && (CMP_NUMERIC.test(text) || CMP_IDENTIFIER.test(text));
+  function cmpCheckNumericCells() {
+    for (const table of cmpVisibleAll(CMP_TABLE)) {
+      const cells = cmpRowsOf(table).filter((row) => !cmpIsHeaderRow(row)).flatMap(cmpCellsOf).slice(0, CMP.maxCells);
+      for (const cell of cells) {
+        const text = cmpText(cell);
+        if (!cmpIsNumeric(text) || !isVisible(cell)) continue;
+        checked('table numeric cells');
+        if (!cmpClippedBox(cell)) continue;
+        add('SU-223', 'warn', 'Columns are sized by their content', cell, `numeric cell "${text}" is truncated or clipped`, 'Numbers and IDs never truncate: give the column a fixed width that fits its widest value and let the name column flex');
+      }
+    }
+  }
+
+  function cmpHorizontalScroller(table) {
+    for (let node = table; node && node !== document.body && node !== document.documentElement; node = node.parentElement) {
+      if (/auto|scroll/.test(css(node).overflowX) && node.scrollWidth > node.clientWidth + CMP.slack) return node;
+    }
+    return null;
+  }
+  function cmpPaintsEdge(el) {
+    const style = css(el);
+    if (style.boxShadow !== 'none' || /gradient/.test(style.backgroundImage) || (style.maskImage && style.maskImage !== 'none')) return true;
+    return ['::before', '::after'].some((pseudo) => {
+      const inner = getComputedStyle(el, pseudo);
+      return !/^(none|normal)$/.test(inner.content) && (inner.boxShadow !== 'none' || /gradient/.test(inner.backgroundImage));
+    });
+  }
+  const cmpFirstColumn = (table) => cmpRowsOf(table).map((row) => cmpCellsOf(row)[0]).filter(Boolean);
+  const CMP_PHONE_STACK_COLUMNS = 5;
+  const CMP_HEADER_ACTIONS = 3;
+  // SU-134: a page header holds the title, the primary action and at most two secondary actions.
+  function cmpCheckHeaderActions() {
+    const h1 = [...ROOT.querySelectorAll('h1')].find(isVisible);
+    if (!h1) return;
+    const row = h1.parentElement;
+    if (!row || !/flex|grid/.test(css(row).display)) return;
+    checked('page header actions');
+    const actions = [...row.querySelectorAll('button, a[href], [role=button]')].filter((el) => isVisible(el) && !h1.contains(el) && !el.closest('nav'));
+    if (actions.length > CMP_HEADER_ACTIONS) {
+      add('SU-134', 'info', 'Quiet chrome, clear location', row, `the page header holds ${actions.length} actions (${actions.map((el) => cmpText(el) || el.getAttribute('aria-label') || '?').slice(0, 6).join(', ')})`,
+        'Keep the title, the primary action and at most two secondary actions; move occasional ones (Export, Print) into a named "More" menu');
+    }
+  }
+  function cmpCheckScrollingTables() {
+    for (const table of cmpVisibleAll(CMP_TABLE)) {
+      const scroller = cmpHorizontalScroller(table);
+      if (!scroller) continue;
+      checked('horizontally scrolling tables');
+      // A table of two or three columns keeps its identifier in view anyway; the rule is about wide tables.
+      const columns = Math.max(...cmpRowsOf(table).map((row) => cmpCellsOf(row).length));
+      if (columns < CMP.minWideColumns) continue;
+      // On a phone, a table of records reads better as stacked rows than as a strip people pan sideways.
+      if (innerWidth <= LIMITS.narrowViewport && columns >= CMP_PHONE_STACK_COLUMNS) {
+        add('SU-223', 'info', 'Columns are sized by their content', table, `a ${columns}-column table scrolls sideways at ${innerWidth}px`,
+          'Stack the rows on phones: identifier and key value on line 1, status on line 2, the rest as label–value pairs, and a "Sort by" select');
+      }
+      if (cmpFirstColumn(table).some((cell) => css(cell).position === 'sticky')) continue;
+      if ([scroller, scroller.parentElement].filter(Boolean).some(cmpPaintsEdge)) continue;
+      add('SU-223', 'warn', 'Columns are sized by their content', table, 'table scrolls sideways with no sticky first column and no edge shadow, so the row identifier scrolls away and nothing hints at more columns', 'position: sticky; left: 0 on the first column with a soft shadow on its edge (or a gradient on the scroller)');
+    }
+  }
+
+  // A sort affordance: an icon or arrow glyph in a header button, or the word "sort" in its name, class or label.
+  function cmpShowsSort(button) {
+    const label = `${button.getAttribute('aria-label') || ''} ${button.getAttribute('title') || ''} ${cmpText(button)}`;
+    if (/sort/i.test(label) || /sort/i.test(button.getAttribute('class') || '') || CMP_SORT_GLYPH.test(label)) return true;
+    return !!button.querySelector('svg, i, img, [class*=icon], [class*=caret], [class*=arrow], [class*=chevron]') && !CMP_NOT_SORT.test(label);
+  }
+  // The columns in which every body row (two or more) holds a checkbox.
+  function cmpCheckboxColumns(bodyRows) {
+    if (bodyRows.length < 2) return [];
+    const rows = bodyRows.map(cmpCellsOf);
+    return rows[0].map((_, index) => index).filter((index) => rows.every((cells) => cells[index] && (cells[index].matches(CMP_CHECKBOX) || cells[index].querySelector(CMP_CHECKBOX))));
+  }
+  function cmpCheckHeaders() {
+    for (const table of cmpVisibleAll(CMP_TABLE)) {
+      const rows = cmpRowsOf(table).filter(isVisible);
+      const headRows = rows.filter(cmpIsHeaderRow);
+      if (!headRows.length) continue;
+      checked('table headers');
+      const sortButtons = headRows.flatMap(cmpCellsOf).flatMap((cell) => [...cell.querySelectorAll(CMP_BUTTON)]).filter((button) => isVisible(button) && cmpShowsSort(button));
+      if (sortButtons.length && !table.querySelector('[aria-sort]')) {
+        add('SU-224', 'fail', 'Sort and select are visible state', sortButtons[0], `${sortButtons.length} header button(s) show a sort icon but no column header has aria-sort`, 'aria-sort="ascending" | "descending" on the sorted th (and only there); the icon shows on that column');
+      }
+      const head = cmpCellsOf(headRows[headRows.length - 1]);
+      for (const index of cmpCheckboxColumns(rows.filter((row) => !cmpIsHeaderRow(row)))) {
+        if (head[index] && !head[index].matches(CMP_CHECKBOX) && !head[index].querySelector(CMP_CHECKBOX)) {
+          add('SU-224', 'warn', 'Sort and select are visible state', head[index], 'rows have a selection checkbox but the header cell has no select-all checkbox', 'A header checkbox (indeterminate when only some rows are selected) with aria-label "Select all"');
+        }
+      }
+    }
+  }
+
+  function cmpCheckClickableRows() {
+    for (const row of cmpVisibleAll('tr[onclick], tr[role=link], tr[role=button], [role=row][onclick]')) {
+      checked('clickable rows');
+      const controls = [...row.querySelectorAll(`${CMP_BUTTON}, a[href], [role=link]`)].filter(isVisible);
+      if (!controls.length) continue;
+      add('SU-225', 'info', 'Row actions sit at the end', row, `the whole row is clickable and also holds ${controls.length} button(s) or link(s)`, 'Make the row open its detail only when it has no other controls; otherwise link the name cell');
+    }
+  }
+
+  // ----- navigation: SU-228, SU-231 -----
+  const cmpWeight = (el) => parseInt(css(el).fontWeight, 10) || 400;
+  const cmpFill = (el) => parseColor(css(el).backgroundColor).a > 0.05;
+  // Why a link looks active, or null: its class, or the one link in a list of 3+ with another weight or fill.
+  function cmpActiveSignal(link, group) {
+    const classes = `${link.getAttribute('class') || ''} ${(link.closest('li') || link).getAttribute('class') || ''}`;
+    if (CMP_ACTIVE_CLASS.test(classes)) return `class "${classes.trim()}"`;
+    if (group.length < 3) return null;
+    const others = group.filter((other) => other !== link);
+    if (others.every((other) => cmpWeight(other) === cmpWeight(others[0])) && Math.abs(cmpWeight(link) - cmpWeight(others[0])) >= 200) return `font-weight ${cmpWeight(link)} against ${cmpWeight(others[0])}`;
+    if (others.every((other) => !cmpFill(other)) && cmpFill(link) && !CMP_CALL_TO_ACTION.test(cmpText(link))) return 'a background its siblings do not have';
+    return null;
+  }
+  function cmpLinkGroups(nav) {
+    const links = [...nav.querySelectorAll('a[href]')].filter((link) => isVisible(link) && !link.matches('[role=tab], [role=menuitem]'));
+    const groups = new Map();
+    links.forEach((link) => { const key = (link.closest('li') || link).parentElement; groups.set(key, [...(groups.get(key) || []), link]); });
+    return [...groups.values()];
+  }
+  function cmpCheckCurrentLink() {
+    for (const nav of cmpVisibleAll('nav, [role=navigation]')) {
+      if (nav.matches(CMP_BREADCRUMB) || nav.querySelector('[aria-current]:not([aria-current=false])')) continue;
+      for (const group of cmpLinkGroups(nav)) {
+        if (group.length < 2) continue;
+        checked('navigation lists');
+        const link = group.find((candidate) => cmpActiveSignal(candidate, group));
+        if (!link) continue;
+        add('SU-228', 'warn', 'Navigation marks the current page', link, `"${cmpText(link).slice(0, 24)}" is styled as active (${cmpActiveSignal(link, group)}) but no link in this nav has aria-current`, 'aria-current="page" on the current link (and style from [aria-current], so the two cannot drift apart)');
+      }
+    }
+  }
+
+  const cmpWithoutHash = (href) => { const url = new URL(href, location.href); url.hash = ''; return url.href; };
+  function cmpCheckBreadcrumbs() {
+    for (const crumbs of cmpVisibleAll(CMP_BREADCRUMB)) {
+      const items = [...crumbs.querySelectorAll('li')];
+      const last = items.length ? items[items.length - 1] : crumbs.lastElementChild;
+      if (!last) continue;
+      checked('breadcrumbs');
+      const link = last.matches('a[href]') ? last : last.querySelector('a[href]');
+      if (!link || cmpWithoutHash(link.getAttribute('href')) !== cmpWithoutHash(location.href)) continue;
+      add('SU-231', 'warn', 'Breadcrumbs show where, not where you have been', link, `the last crumb "${cmpText(link).slice(0, 24)}" is a link to the page you are on`, 'Render the current page as plain text with aria-current="page" (or leave it out)');
+    }
+  }
+
+  // ----- overlays: SU-233, SU-234, SU-236, SU-238 -----
+  const cmpIsRed = (el) => { const c = parseColor(css(el).color); return c.a > 0.5 && c.r >= 150 && c.g <= c.r * 0.55 && c.b <= c.r * 0.55; };
+  // True when something divides the item from the one above it; the first item has nothing above it.
+  function cmpSeparatedBefore(item) {
+    for (let node = item; node && !node.matches('[role=menu], [role=menubar], body'); node = node.parentElement) {
+      if (cmpHasBorder(node, 'Top')) return true;
+      const previous = node.previousElementSibling;
+      if (previous) return previous.matches('[role=separator], hr') || cmpHasBorder(previous, 'Bottom');
+    }
+    return true;
+  }
+  function cmpCheckMenuItems() {
+    const touch = innerWidth <= LIMITS.narrowViewport;
+    const minimum = touch ? CMP.menuItemTouch : CMP.menuItem;
+    for (const item of cmpVisibleAll('[role^=menuitem]')) {
+      checked('menu items');
+      const height = item.getBoundingClientRect().height;
+      if (height + CMP.slack < minimum) add('SU-233', 'warn', 'Menus are for short action lists', item, `menu item is ${Math.round(height)}px tall (under ${minimum}px${touch ? ', the touch size' : ''})`, `Menu items at least ${minimum}px tall${touch ? '' : ' (44px on touch screens)'}`);
+      const danger = CMP_DANGER_CLASS.test(item.getAttribute('class') || '') || cmpIsRed(item);
+      if (danger && !cmpSeparatedBefore(item)) add('SU-233', 'info', 'Menus are for short action lists', item, 'destructive menu item has no separator above it', 'Put the destructive item last, after a separator ([role=separator] or a border-top)');
+    }
+  }
+
+  const cmpIdRefs = (el, name) => (el.getAttribute(name) || '').split(/\s+/).map((id) => document.getElementById(id)).filter(Boolean);
+  function cmpHasTooltip(el) {
+    return el.hasAttribute('title') || el.hasAttribute('data-tooltip') || el.hasAttribute('data-tip')
+      || cmpIdRefs(el, 'aria-describedby').some((target) => target.matches('[role=tooltip]'));
+  }
+  function cmpCheckTooltips() {
+    for (const tip of cmpAll('[role=tooltip]')) {
+      checked('tooltips');
+      const length = cmpText(tip).length;
+      if (length > CMP.tooltipChars) add('SU-234', 'warn', 'Tooltips label; they do not explain', tip, `tooltip holds ${length} characters (about ${CMP.tooltipChars} at most)`, 'Keep a tooltip to a short label; put longer help in the page, a popover or a help link');
+      if (tip.querySelector(CMP_FOCUSABLE)) add('SU-234', 'warn', 'Tooltips label; they do not explain', tip, 'tooltip contains focusable content (a link or button); it vanishes before it can be reached', 'Plain text only in a tooltip; use a popover for interactive content');
+    }
+    for (const el of cmpVisibleAll(':disabled')) {
+      if (!cmpHasTooltip(el)) continue;
+      checked('disabled tooltip triggers');
+      add('SU-234', 'warn', 'Tooltips label; they do not explain', el, 'disabled element is the trigger of a tooltip; disabled controls get no focus or hover events, so the tooltip never shows', 'aria-disabled="true" instead of disabled (still focusable), or explain next to the control');
+    }
+  }
+
+  const cmpIsOpenModal = () => ROOT.matches('dialog[open], [aria-modal="true"]') && isVisible(ROOT);
+  const cmpHasInnerScroll = (dialog) => [dialog, ...dialog.querySelectorAll('*')].some((el) => /auto|scroll/.test(css(el).overflowY) && el.scrollHeight > el.clientHeight + CMP.slack);
+  function cmpFieldCount(dialog) {
+    const fields = [...dialog.querySelectorAll(`${TEXT_FIELD}, input[type=checkbox], input[type=file]`)].filter(isVisible).length;
+    const radioGroups = new Set([...dialog.querySelectorAll('input[type=radio]')].filter(isVisible).map((radio) => radio.name || radio));
+    return fields + radioGroups.size;
+  }
+  function cmpCheckDialog() {
+    if (!cmpIsOpenModal()) return;
+    checked('open modal dialogs');
+    const rect = ROOT.getBoundingClientRect();
+    if (innerWidth >= CMP.modalMinViewport && rect.width > innerWidth * CMP.modalShare + CMP.slack) {
+      add('SU-236', 'warn', 'Dialogs are for short decisions', ROOT, `dialog is ${Math.round(rect.width)}px wide, wider than 90vw (${Math.round(innerWidth * CMP.modalShare)}px)`, 'width: min(560px, 90vw) for a standard dialog; a task this wide belongs on a page or in a side panel');
+    }
+    const beyond = rect.top < -CMP.slack || rect.bottom > innerHeight + CMP.slack;
+    if (!cmpHasInnerScroll(ROOT) && (beyond || ROOT.scrollHeight > ROOT.clientHeight + CMP.slack)) {
+      add('SU-236', 'warn', 'Dialogs are for short decisions', ROOT, `dialog content is taller than the screen (${Math.round(rect.height)}px in ${innerHeight}px) and has no inner scroll`, 'max-height: 90dvh with overflow-y: auto on the body, header and actions pinned; or move the task to a page');
+    }
+    const fields = cmpFieldCount(ROOT);
+    if (fields > CMP.maxDialogFields) add('SU-236', 'info', 'Dialogs are for short decisions', ROOT, `dialog holds ${fields} form fields (more than ${CMP.maxDialogFields})`, 'A dialog is for a short decision; a long form belongs on its own page or in a side panel');
+  }
+
+  function cmpIsFixed(el) {
+    for (let node = el; node && node !== document.documentElement; node = node.parentElement) if (css(node).position === 'fixed') return true;
+    return false;
+  }
+  // Innermost toast-like elements that are painted, fixed to the screen and take pointer events.
+  function cmpToasts() {
+    const candidates = cmpAll(CMP_TOAST).filter((el) => isVisible(el) && cmpIsFixed(el) && css(el).pointerEvents !== 'none');
+    return candidates.filter((el) => !candidates.some((other) => other !== el && el.contains(other)));
+  }
+  const cmpIsBottomBar = (layer) => {
+    const rect = layer.getBoundingClientRect();
+    const isNav = layer.matches('nav, [role=navigation], [role=tablist]') || !!layer.querySelector('nav, [role=navigation], [role=tablist]');
+    return isNav && rect.bottom >= innerHeight - CMP.bottomSlack && rect.height < innerHeight / 2;
+  };
+  function cmpCheckToasts() {
+    const toasts = cmpToasts();
+    if (!toasts.length) return;
+    const buttons = cmpVisibleAll(CMP_BUTTON).filter((button) => !button.closest(CMP_TOAST));
+    for (const toast of toasts) {
+      checked('toasts');
+      const box = toast.getBoundingClientRect();
+      const covered = buttons.find((button) => cmpOverlaps(box, button.getBoundingClientRect()));
+      if (covered) add('SU-238', 'warn', 'Toasts do not cover the work', toast, `toast sits on top of the button "${cmpText(covered).slice(0, 24) || covered.getAttribute('aria-label') || 'button'}"`, 'Pick one corner nothing else uses, and offset it above any fixed button or bottom bar');
+      const bar = pinnedLayers().find((layer) => !layer.contains(toast) && !toast.contains(layer) && !layer.matches(CMP_TOAST) && cmpIsBottomBar(layer) && cmpOverlaps(box, layer.getBoundingClientRect()));
+      if (bar) add('SU-238', 'warn', 'Toasts do not cover the work', toast, 'toast overlaps the fixed bottom navigation bar', 'Lift the toast by the bar height (bottom: calc(56px + 16px)) on phones');
+    }
+  }
+
+  // ----- inputs: SU-240, SU-241, SU-243, SU-244 -----
+  const cmpIsSubmit = (el) => el.matches('input[type=submit], button[type=submit], button:not([type])') && !el.matches('[role=switch]');
+  function cmpCheckSwitches() {
+    const switches = cmpAll('[role=switch], input[type=checkbox][class*=switch i], input[type=checkbox][class*=toggle i]');
+    for (const control of switches.filter((el) => isVisible(el) || isVisible(el.closest('label') || el))) {
+      checked('switches');
+      const form = control.closest('form');
+      if (!form || ![...form.querySelectorAll('input, button')].some(cmpIsSubmit)) continue;
+      add('SU-240', 'info', 'Switch for now, checkbox for on save', control, 'switch inside a form that also has a submit button: a switch applies at once, so it will look saved before Save is pressed', 'Use a checkbox for a choice that is submitted with the form; keep switches for settings that apply immediately');
+    }
+  }
+
+  const cmpIsPlaceholder = (option) => option.hidden || (option.disabled && option.value === '');
+  function cmpCheckChoiceCounts() {
+    for (const select of cmpVisibleAll('select:not([multiple])')) {
+      checked('selects');
+      const count = [...select.options].filter((option) => !cmpIsPlaceholder(option)).length;
+      if (count < 1 || count > CMP.maxSelectOptions) continue;
+      add('SU-241', 'info', 'Pick the control by option count', select, `select with ${count} option(s): every choice fits on screen`, 'Two to five options that all fit: radios, or a segmented control for a view or mode');
+    }
+    const named = new Map();
+    for (const radio of cmpVisibleAll('input[type=radio][name]')) {
+      const key = `${radio.form ? [...document.forms].indexOf(radio.form) : 'none'}|${radio.name}`;
+      named.set(key, [...(named.get(key) || []), radio]);
+    }
+    const aria = cmpVisibleAll('[role=radiogroup]').map((el) => [...el.querySelectorAll('[role=radio]')]);
+    for (const group of [...named.values(), ...aria].filter((radios) => radios.length)) {
+      checked('radio groups');
+      if (group.length > CMP.maxRadios) add('SU-241', 'info', 'Pick the control by option count', group[0], `radio group with ${group.length} options (more than ${CMP.maxRadios})`, 'Six to fifteen options: a select; more than that: a searchable combobox');
+    }
+  }
+
+  const cmpZoneByClass = (el) => [...el.classList].some((token) => CMP_ZONE_TOKEN.test(token) && !/dropdown/i.test(token));
+  const cmpIsDropZone = (el) => CMP_ZONE_TAGS.test(el.tagName) && (cmpZoneByClass(el) || el.hasAttribute('ondrop') || el.hasAttribute('ondragover'));
+  function cmpHasFileControl(zone) {
+    if (zone.querySelector(`input[type=file], ${CMP_BUTTON}`)) return true;
+    return zone.matches('label') && !!zone.control && zone.control.matches('input[type=file]');
+  }
+  function cmpCheckDropZones() {
+    const zones = cmpVisibleAll('*').filter(cmpIsDropZone);
+    for (const zone of zones.filter((el) => !zones.some((outer) => outer !== el && outer.contains(el)))) {
+      const rect = zone.getBoundingClientRect();
+      if (rect.width < CMP.minZone[0] || rect.height < CMP.minZone[1]) continue;
+      checked('drop zones');
+      if (cmpHasFileControl(zone)) continue;
+      add('SU-243', 'warn', 'File upload works without dragging', zone, 'drop zone has no file input and no button inside, so keyboard and touch users cannot add a file', 'A "Browse files" button (and an input[type=file]) inside the zone, with the accepted types and size limit stated');
+    }
+  }
+
+  // 1ch is the width of "0", measured on a canvas in the field's own font.
+  const cmpMeasureContext = Object.assign(document.createElement('canvas'), { width: 1, height: 1 }).getContext('2d');
+  function cmpCharWidth(style) {
+    cmpMeasureContext.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    return cmpMeasureContext.measureText('0').width || px(style.fontSize) * 0.55;
+  }
+  function cmpCheckSearchFields() {
+    for (const field of cmpVisibleAll('input[type=search], [role=searchbox]')) {
+      checked('search fields');
+      const style = css(field);
+      const inner = field.getBoundingClientRect().width - px(style.paddingLeft) - px(style.paddingRight) - px(style.borderLeftWidth) - px(style.borderRightWidth);
+      const wanted = CMP.searchChars * cmpCharWidth(style);
+      if (inner + CMP.slack >= wanted) continue;
+      add('SU-244', 'info', 'Search fields fit the query', field, `search field shows about ${Math.floor(inner / cmpCharWidth(style))} characters (under ${CMP.searchChars}ch)`, 'Wide enough for a typical query: 27+ characters, or flex to the available width');
+    }
+  }
+
+  REGISTERED = [...REGISTERED,
+    ['table row heights', () => cmpCheckRowHeights()], ['numeric cells', () => cmpCheckNumericCells()], ['scrolling tables', () => cmpCheckScrollingTables()],
+    ['table headers', () => cmpCheckHeaders()], ['clickable rows', () => cmpCheckClickableRows()],
+    ['current link', () => cmpCheckCurrentLink()], ['breadcrumbs', () => cmpCheckBreadcrumbs()],
+    ['menu items', () => cmpCheckMenuItems()], ['tooltips', () => cmpCheckTooltips()], ['dialog size', () => cmpCheckDialog()], ['toasts', () => cmpCheckToasts()],
+    ['header actions', () => cmpCheckHeaderActions()], ['switches', () => cmpCheckSwitches()], ['choice counts', () => cmpCheckChoiceCounts()], ['drop zones', () => cmpCheckDropZones()], ['search fields', () => cmpCheckSearchFields()]];
+  // ---------- Interaction states: layout shift, contrast, color-only selection, disabled hints (SU-249, SU-250, SU-251, SU-252) ----------
+  const IX_LIMITS = {
+    shiftSlack: 1, boxSlack: 0.5, perRule: 8, maxRules: 400, maxGroups: 150, maxLabelChars: 80, maxDisabled: 100, fieldOpacity: 0.7,
+    boldWeight: 700, selectedFillRatio: 3, selectedTextRatio: 3, hintChars: 8,
+  };
+  const IX_STATE_SOURCE = ':hover|:active|\\[aria-selected=["\']?true["\']?\\]|\\[aria-current(?:=["\']?[\\w-]+["\']?)?\\]|\\[aria-pressed=["\']?true["\']?\\]'
+    + '|\\.is-active(?![\\w-])|\\.active(?![\\w-])|\\.selected(?![\\w-])|\\[data-state=["\']?(?:active|on|checked|open)["\']?\\]';
+  const IX_STATE = new RegExp(IX_STATE_SOURCE);
+  const IX_STATE_ALL = new RegExp(IX_STATE_SOURCE, 'g');
+  const IX_NEGATED_STATE = /:not\([^)]*(?:hover|active|aria-|selected)/;
+  const IX_SIDES = ['top', 'right', 'bottom', 'left'];
+  const IX_SELECTED = '[aria-selected="true"], [aria-current]:not([aria-current="false"]), [aria-pressed="true"], [aria-checked="true"], .active, .is-active, .selected';
+  const IX_GROUP = '[role=tablist], [role=radiogroup], [role=listbox], [role=menu], nav';
+  const IX_NOT_A_GROUP = '[aria-label*="readcrumb" i], .breadcrumb, .breadcrumbs';
+  const IX_INDICATOR = /indicator|slider|thumb|underline|highlight|marker|glider/i;
+  const IX_ITEM = `${INTERACTIVE}, [role=tab], [role=radio], [role=option], [role=menuitem]`;
+  const ixCanvas = document.createElement('canvas').getContext('2d');
+
+  // ----- shared helpers -----
+  function ixResolve(value, el) {
+    let text = String(value || '').trim();
+    for (let pass = 0; pass < 3 && /var\(/.test(text); pass += 1) {
+      text = text.replace(/var\(\s*(--[\w-]+)\s*(?:,\s*([^)]*))?\)/g, (_, name, fallback) => css(el).getPropertyValue(name).trim() || (fallback || '').trim());
+    }
+    return /var\(/.test(text) ? '' : text.trim();
+  }
+  function ixLength(value, el, base = el) {
+    const text = String(value || '').trim();
+    if (/^0(px)?$/.test(text)) return 0;
+    const match = text.match(/^(-?\d*\.?\d+)(px|rem|em)$/);
+    if (!match) return NaN;
+    const unit = match[2] === 'px' ? 1 : px(css(match[2] === 'rem' ? document.documentElement : base).fontSize);
+    return parseFloat(match[1]) * unit;
+  }
+  function ixWeight(value, el) {
+    const text = ixResolve(value, el).toLowerCase();
+    if (text === 'normal') return 400;
+    if (text === 'bold') return 700;
+    return /^\d+(\.\d+)?$/.test(text) ? parseFloat(text) : NaN;
+  }
+  function ixColor(value, el) {
+    const text = ixResolve(value, el);
+    if (!text || /^(inherit|initial|unset|revert|currentcolor)$/i.test(text) || !CSS.supports('color', text)) return null;
+    return parseColor(text);
+  }
+  // What shows through an element's own background: the page behind it, or null when that is an image or gradient.
+  function ixBackdropBelow(el) {
+    const rect = el.getBoundingClientRect();
+    const backdrop = backdropAt(el.parentElement || el, rect.left + rect.width / 2, rect.top + rect.height / 2);
+    return !backdrop || backdrop.covered || backdrop.image || backdrop.stops ? null : backdrop.color;
+  }
+  const ixLabelOf = (el) => (el.getAttribute('aria-label') || el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 30);
+  const ixIsSelected = (el) => el.matches(IX_SELECTED);
+
+  // ----- width reservation and the pixels a weight change moves -----
+  // A hidden bold copy of the label (::before/::after with content, visibility hidden) or a grade axis keeps the width fixed.
+  // The reservation may sit on the item or on the label inside it (a <span data-label> in a link).
+  const IX_RESERVE_DEPTH = 2;
+  function ixReservesWidth(el, depth = 0) {
+    if (/GRAD/i.test(css(el).fontVariationSettings)) return true;
+    const own = ['::before', '::after'].some((pseudo) => {
+      const style = getComputedStyle(el, pseudo);
+      return !/^(none|normal|""|'')$/.test(style.content) && style.visibility === 'hidden';
+    });
+    return own || (depth < IX_RESERVE_DEPTH && [...el.children].some((child) => ixReservesWidth(child, depth + 1)));
+  }
+  function ixTextWidth(el, weight) {
+    const style = css(el);
+    ixCanvas.font = `${style.fontStyle} ${weight} ${style.fontSize} ${style.fontFamily}`;
+    const raw = el.textContent.replace(/\s+/g, ' ').trim();
+    const text = style.textTransform === 'uppercase' ? raw.toUpperCase() : style.textTransform === 'lowercase' ? raw.toLowerCase() : raw;
+    return ixCanvas.measureText(text).width + px(style.letterSpacing) * text.length;
+  }
+  // How many pixels the element's own width changes when its weight goes from `now` to `other`; room inside a
+  // fixed-width box (equal-width segments, a button with a set width) absorbs the change.
+  function ixWeightShift(el, now, other) {
+    const style = css(el);
+    const label = el.textContent.replace(/\s+/g, ' ').trim();
+    if (!label || label.length > IX_LIMITS.maxLabelChars || el.getClientRects().length !== 1) return 0;
+    const inner = el.getBoundingClientRect().width - ['paddingLeft', 'paddingRight', 'borderLeftWidth', 'borderRightWidth'].reduce((sum, side) => sum + px(style[side]), 0);
+    const [current, changed] = [ixTextWidth(el, now), ixTextWidth(el, other)];
+    if (current > inner + IX_LIMITS.shiftSlack) return 0;
+    return Math.max(0, Math.abs(current - changed) - Math.max(0, inner - current));
+  }
+
+  // ----- selected items and their siblings (tablists, radiogroups, listboxes, segmented rows, nav lists) -----
+  function ixPeers(item) {
+    const parent = item.parentElement;
+    if (!parent) return [];
+    const siblings = [...parent.children].filter((c) => c !== item && c.tagName === item.tagName && isVisible(c));
+    if (siblings.length || parent.tagName !== 'LI' || !parent.parentElement) return siblings;
+    return [...parent.parentElement.children].filter((li) => li !== parent && li.tagName === 'LI')
+      .map((li) => li.querySelector(item.tagName.toLowerCase())).filter((c) => c && isVisible(c));
+  }
+  function ixGroupOf(item, peers) {
+    const container = item.closest(IX_GROUP);
+    if (container) return container;
+    const parent = item.parentElement;
+    const kind = (member) => (member.getAttribute('class') || '').split(/\s+/).filter((name) => !/^(is-)?(active|selected|current)$/.test(name)).sort().join(' ');
+    const row = parent && /flex|grid/.test(css(parent).display) && [item, ...peers].every((member) => member.matches(IX_ITEM) && kind(member) === kind(item));
+    return row && peers.length ? parent : null;
+  }
+  let ixGroupCache = null;
+  // One entry per group: the selected item, its unselected siblings and the container.
+  function ixGroups() {
+    if (ixGroupCache) return ixGroupCache;
+    const seen = new Set();
+    ixGroupCache = [...ROOT.querySelectorAll(IX_SELECTED)].slice(0, LIMITS.maxElements).reduce((groups, node) => {
+      if (groups.length >= IX_LIMITS.maxGroups || !isVisible(node)) return groups;
+      const item = node.matches('li') ? node.querySelector(IX_ITEM) : node;
+      if (!item || !item.matches(IX_ITEM) || item.closest(IX_NOT_A_GROUP)) return groups;
+      const peers = ixPeers(item).filter((peer) => !ixIsSelected(peer));
+      const container = ixGroupOf(item, peers);
+      if (!container || !peers.length || seen.has(container)) return groups;
+      seen.add(container);
+      return [...groups, { item, peers, container }];
+    }, []);
+    return ixGroupCache;
+  }
+  const ixFlaggedShift = new Set();
+
+  // ----- SU-249: states change paint, not layout -----
+  // Which box properties a state rule changes, compared with how the element looks at rest (or unselected).
+  function ixSideValues(style, kind, el) {
+    const longhand = (side) => (kind === 'padding' ? `padding-${side}` : `border-${side}-width`);
+    const tokens = ixResolve(style.getPropertyValue(kind === 'padding' ? 'padding' : 'border-width'), el).split(/\s+/).filter(Boolean);
+    const expanded = tokens.length ? [tokens[0], tokens[1] || tokens[0], tokens[2] || tokens[0], tokens[3] || tokens[1] || tokens[0]] : [];
+    return IX_SIDES.map((side, i) => ixResolve(style.getPropertyValue(longhand(side)), el) || expanded[i] || '');
+  }
+  function ixBoxChanged(style, kind, el, reference) {
+    const rest = css(reference);
+    return ixSideValues(style, kind, el).some((value, i) => {
+      const next = ixLength(value, el);
+      const now = px(rest[kind === 'padding' ? `padding${IX_SIDES[i][0].toUpperCase()}${IX_SIDES[i].slice(1)}` : `border${IX_SIDES[i][0].toUpperCase()}${IX_SIDES[i].slice(1)}Width`]);
+      return value !== '' && !Number.isNaN(next) && Math.abs(next - now) > IX_LIMITS.boxSlack;
+    });
+  }
+  function ixShiftingProperties(rule, el, reference) {
+    const style = rule.style;
+    const changed = [];
+    if (ixBoxChanged(style, 'padding', el, reference)) changed.push('padding');
+    if (ixBoxChanged(style, 'border', el, reference)) changed.push('border-width');
+    const size = ixLength(ixResolve(style.getPropertyValue('font-size'), el), el, el.parentElement || el);
+    if (!Number.isNaN(size) && Math.abs(size - px(css(reference).fontSize)) > IX_LIMITS.boxSlack) changed.push('font-size');
+    const weight = ixWeight(style.getPropertyValue('font-weight'), el);
+    const now = ixWeight(css(reference).fontWeight, reference);
+    const reserved = ixReservesWidth(el) || /GRAD/i.test(style.getPropertyValue('font-variation-settings'));
+    if (!Number.isNaN(weight) && weight !== now && !reserved && ixWeightShift(reference, now, weight) > IX_LIMITS.shiftSlack) changed.push('font-weight');
+    return changed;
+  }
+  function ixStateParts(rule) {
+    return splitSelectorList(rule.selectorText || '').map((part) => part.trim())
+      .filter((part) => part && IX_STATE.test(part) && !IX_NEGATED_STATE.test(part) && !/::|:before|:after/.test(part));
+  }
+  // Elements a state selector applies to: for :hover/:active every match, for attribute/class states the ones in that state.
+  function ixStateElements(part) {
+    const probe = part.replace(/:hover|:active/g, '').trim();
+    if (!probe || /[\s>+~(]$/.test(probe)) return [];
+    let found = [];
+    try { found = [...ROOT.querySelectorAll(probe)]; } catch { return []; }
+    return found.filter((el) => isVisible(el) && !el.matches(':disabled, [aria-disabled="true"]')).slice(0, IX_LIMITS.perRule);
+  }
+  // The same element without the state: for attribute/class states, a visible match of the stateless selector that is not in it.
+  function ixRestReference(part, el) {
+    if (/:hover|:active/.test(part.replace(IX_STATE_ALL, (token) => (/^:(hover|active)$/.test(token) ? token : '')))) return el;
+    const stateless = part.replace(IX_STATE_ALL, '').trim();
+    if (!stateless || /[\s>+~(]$/.test(stateless)) return null;
+    try { return [...ROOT.querySelectorAll(stateless)].find((other) => other !== el && !other.matches(part) && isVisible(other)) || null; } catch { return null; }
+  }
+  function ixCheckStateShift({ rules }) {
+    const seen = new Set();
+    let examined = 0;
+    for (const { rule, inReduced } of rules) {
+      if (inReduced || examined >= IX_LIMITS.maxRules || !lpRuleApplies(rule)) continue;
+      const names = [...rule.style];
+      if (!names.some((name) => /^(padding|border|font-size|font-weight)/.test(name))) continue;
+      for (const part of ixStateParts(rule)) {
+        if (seen.has(part)) continue;
+        seen.add(part);
+        examined += 1;
+        for (const el of ixStateElements(part)) {
+          const inGroup = ixGroups().some((group) => group.item === el);
+          const reference = ixRestReference(part, el);
+          if (!reference) continue;
+          checked('state rules (layout shift)');
+          const changed = ixShiftingProperties(rule, el, reference).filter((name) => !(inGroup && name === 'font-weight'));
+          if (!changed.length) continue;
+          add('SU-249', 'warn', 'States change paint, not layout', el,
+            `${part} changes ${changed.join(', ')} when the state applies, so the element and its neighbours move`,
+            'Change color, background, shadow or transform only; reserve the bold width with a hidden copy of the label (::after { content: attr(data-label); font-weight: 600; visibility: hidden; height: 0 }) or use the GRAD axis');
+        }
+      }
+    }
+  }
+  function ixCheckSelectedShift() {
+    for (const { item, peers } of ixGroups()) {
+      const peer = peers[0];
+      const [selectedWeight, peerWeight] = [ixWeight(css(item).fontWeight, item), ixWeight(css(peer).fontWeight, peer)];
+      checked('selected items (weight shift)');
+      if (selectedWeight === peerWeight || ixReservesWidth(item) || ixReservesWidth(peer)) continue;
+      const shift = ixWeightShift(item, selectedWeight, peerWeight);
+      if (shift <= IX_LIMITS.shiftSlack) continue;
+      ixFlaggedShift.add(item);
+      add('SU-249', 'warn', 'States change paint, not layout', item,
+        `selected "${ixLabelOf(item)}" is ${Math.round(shift)}px wider at weight ${selectedWeight} than at ${peerWeight}, so its neighbours shift when the selection moves`,
+        'Reserve the bold width with a hidden copy of the label (::after { content: attr(data-label); font-weight: 600; visibility: hidden; height: 0 }), use the GRAD axis, or keep one weight and mark selection with an indicator');
+    }
+  }
+
+  // ----- SU-250: every state keeps its contrast -----
+  const ixPlainBackground = (style, el) => {
+    if (style.getPropertyValue('background-image') && !/^(none|initial)$/.test(style.getPropertyValue('background-image'))) return null;
+    return ixColor(style.getPropertyValue('background-color') || style.getPropertyValue('background'), el);
+  };
+  // All state rules that match one element in one state, merged in source order (a later rule may set the other half of the pair).
+  function ixStatePairs(rules) {
+    const merged = new Map();
+    let examined = 0;
+    for (const { rule, inReduced } of rules) {
+      const [textValue, fillValue] = [rule.style.getPropertyValue('color'), rule.style.getPropertyValue('background-color') || rule.style.getPropertyValue('background')];
+      if (inReduced || examined >= IX_LIMITS.maxRules || !lpRuleApplies(rule) || (!textValue && !fillValue)) continue;
+      for (const part of ixStateParts(rule)) {
+        examined += 1;
+        const kind = [...new Set(part.match(IX_STATE_ALL))].sort().join('+');
+        for (const el of ixStateElements(part)) {
+          const entries = merged.get(el) || new Map();
+          const entry = entries.get(kind) || { part, text: null, fill: null, fillSet: false };
+          const text = textValue ? ixColor(textValue, el) : null;
+          const fill = fillValue ? ixPlainBackground(rule.style, el) : null;
+          entries.set(kind, { ...entry, text: text || entry.text, fill: fill || entry.fill, fillSet: entry.fillSet || !!fill });
+          merged.set(el, entries);
+        }
+      }
+    }
+    return merged;
+  }
+  function ixCheckStateContrast({ rules }) {
+    for (const [el, entries] of ixStatePairs(rules)) {
+      for (const { part, text, fill } of entries.values()) {
+        if (!text && !fill) continue;
+        const style = css(el);
+        const below = ixBackdropBelow(el);
+        if (!below || !el.textContent.trim() || (!fill && style.backgroundImage !== 'none')) continue;
+        checked('state color pairs');
+        const surface = over(fill || parseColor(style.backgroundColor), below);
+        const ink = over(text || parseColor(style.color), surface);
+        const [size, weight] = [px(style.fontSize), ixWeight(style.fontWeight, el)];
+        const large = size >= LIMITS.largePx || (size >= LIMITS.largeBoldPx && weight >= IX_LIMITS.boldWeight);
+        const needed = large ? LIMITS.textLarge : LIMITS.textAA;
+        const score = ratio(ink, surface);
+        if (score >= needed) continue;
+        add('SU-250', 'warn', 'Every state keeps its contrast', el,
+          `${part}: text ${hex(ink)} on ${hex(surface)} is ${score.toFixed(2)}:1 (needs ${needed}:1)`,
+          'Keep text ≥ 4.5:1 (3:1 for large text) in hover, pressed and selected states: darken the text or move the state fill about 4–8% toward the text color, not past it');
+      }
+    }
+  }
+
+  // ----- SU-251: selected is obvious without color -----
+  const IX_SHAPE_PROPS = ['fontWeight', 'fontStyle', 'fontSize', 'textDecorationLine', 'boxShadow', 'backgroundImage', 'transform', 'opacity', 'outlineStyle', 'outlineWidth'];
+  const IX_PSEUDO_PROPS = ['content', 'backgroundColor', 'width', 'height', 'transform', 'boxShadow'];
+  const ixCap = (side) => `${side[0].toUpperCase()}${side.slice(1)}`;
+  // Border width, style and (only when a border is drawn) color: currentcolor on a 0-width border is not a cue.
+  const ixBorderKey = (style) => IX_SIDES.map((side) => {
+    const [width, kind, color] = [style[`border${ixCap(side)}Width`], style[`border${ixCap(side)}Style`], style[`border${ixCap(side)}Color`]];
+    return `${width}|${kind}|${px(width) > 0 && kind !== 'none' ? color : ''}`;
+  }).join(';');
+  const ixShapeKey = (style) => `${IX_SHAPE_PROPS.map((prop) => style[prop]).join('|')}#${ixBorderKey(style)}`;
+  const ixPseudoKey = (el, pseudo) => { const style = getComputedStyle(el, pseudo); return `${IX_PSEUDO_PROPS.map((prop) => style[prop]).join('|')}#${ixBorderKey(style)}`; };
+  function ixDiffersByShape(a, b) {
+    if (ixShapeKey(css(a)) !== ixShapeKey(css(b))) return true;
+    if (['::before', '::after'].some((pseudo) => ixPseudoKey(a, pseudo) !== ixPseudoKey(b, pseudo))) return true;
+    return a.children.length !== b.children.length || a.querySelectorAll('svg, img, i').length !== b.querySelectorAll('svg, img, i').length;
+  }
+  const ixHasIndicator = (container, item) => [...container.querySelectorAll('*')].some((node) => !node.contains(item) && !item.contains(node)
+    && !node.matches(IX_ITEM) && IX_INDICATOR.test(node.getAttribute('class') || '') && /absolute|fixed/.test(css(node).position));
+  function ixFill(el) {
+    const below = ixBackdropBelow(el) || pageCanvas();
+    return over(parseColor(css(el).backgroundColor), below);
+  }
+  function ixCheckSelectedCue() {
+    for (const { item, peers, container } of ixGroups()) {
+      const peer = peers[0];
+      checked('selected items (non-color cue)');
+      if (ixDiffersByShape(item, peer) || ixHasIndicator(container, item)) continue;
+      const [fillA, fillB] = [ixFill(item), ixFill(peer)];
+      const [inkA, inkB] = [over(parseColor(css(item).color), fillA), over(parseColor(css(peer).color), fillB)];
+      const [textRatio, fillRatio] = [ratio(inkA, inkB), ratio(fillA, fillB)];
+      if (textRatio === 1 && fillRatio === 1) continue;
+      if (textRatio >= IX_LIMITS.selectedTextRatio || fillRatio >= IX_LIMITS.selectedFillRatio) continue;
+      add('SU-251', 'warn', 'Selected is obvious without color', item,
+        `selected "${ixLabelOf(item)}" differs from its siblings by color only (text ${textRatio.toFixed(2)}:1, fill ${fillRatio.toFixed(2)}:1 against an unselected sibling)`,
+        'Add a non-color cue to the selected item: a heavier weight plus an indicator, an underline, a check icon, a shadow, or a fill that differs by ≥ 3:1');
+    }
+  }
+
+  // ----- SU-252: disabled controls say why; read-only is not disabled -----
+  function ixHasHint(button) {
+    const described = (button.getAttribute('aria-describedby') || '').split(/\s+/).some((id) => id && document.getElementById(id));
+    if (described) return true;
+    const parent = button.parentElement;
+    if (!parent) return false;
+    const copy = parent.cloneNode(true);
+    copy.querySelectorAll('button, a, input, select, textarea, label, [role=button], style, script, svg').forEach((node) => node.remove());
+    return copy.textContent.trim().length >= IX_LIMITS.hintChars;
+  }
+  function ixCheckDisabledHints() {
+    const buttons = [...ROOT.querySelectorAll('button[disabled], button[aria-disabled="true"], [role=button][aria-disabled="true"]')].slice(0, IX_LIMITS.maxDisabled);
+    for (const button of buttons) {
+      if (!isVisible(button)) continue;
+      checked('disabled buttons');
+      if (ixHasHint(button)) continue;
+      add('SU-252', 'info', 'Disabled means "not now", and says why', button,
+        'disabled button has no aria-describedby and no hint text next to it, so nobody learns why it is unavailable',
+        'Say what is missing in a hint tied with aria-describedby, or use aria-disabled so the button can take focus and show the reason');
+    }
+  }
+  function ixCheckReadonlyFields() {
+    for (const field of ROOT.querySelectorAll(TEXT_FIELD)) {
+      if (!field.readOnly || !isVisible(field)) continue;
+      checked('read-only fields');
+      const style = css(field);
+      const below = ixBackdropBelow(field) || pageCanvas();
+      const surface = over(parseColor(style.backgroundColor), below);
+      const contrast = ratio(over(parseColor(style.color), surface), surface);
+      const opacity = effectiveOpacity(field);
+      const faded = opacity < IX_LIMITS.fieldOpacity;
+      if (!faded && contrast >= LIMITS.textAA) continue;
+      add('SU-252', 'warn', 'Disabled means "not now", and says why', field,
+        `read-only field is styled like a disabled one (${faded ? `opacity ${opacity.toFixed(2)}` : `text ${contrast.toFixed(2)}:1`}): read-only content has to stay readable`,
+        'Read-only is not disabled: full-contrast text (≥ 4.5:1, opacity 1), focusable and selectable, with a visible "read-only" cue such as a label or a lock icon');
+    }
+  }
+
+  function checkInteractionStates(context) {
+    ixCheckSelectedShift();
+    ixCheckStateShift(context);
+    ixCheckStateContrast(context);
+    ixCheckSelectedCue();
+  }
+  REGISTERED = [...REGISTERED, ['interaction states', (context) => checkInteractionStates(context)],
+    ['disabled and read-only', () => { ixCheckDisabledHints(); ixCheckReadonlyFields(); }]];
   // ---------- theming: stylesheet scan and scheme coverage (SU-165, SU-166) ----------
   const THEMING_RULE_CAP = 30000;
   const DARK_SELECTOR = /\.dark(?![\w-])|\.dark-(?:mode|theme)\b|\.theme-dark|\.is-dark|\[data-(?:theme|mode|color-scheme|bs-theme)(?![^\]]*=\s*["']?light)/i;

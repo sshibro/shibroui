@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Billing console (components, clean)</title>
+<style>
+  :root { --ink: #18181b; --muted: #52525b; --accent: #1d4ed8; --line: #d4d4d8; --focus: #2563eb; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 16px/1.5 -apple-system, system-ui, sans-serif; background: #fff; color: var(--ink); }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  main { max-width: 640px; padding: 24px; }
+  h1 { font-size: 28px; line-height: 1.2; margin: 0 0 16px; }
+  h2 { font-size: 18px; margin: 32px 0 12px; }
+  .btn { height: 44px; padding: 0 16px; border: 1px solid #71717a; border-radius: 8px; background: #fff; color: var(--ink); font: inherit; cursor: pointer; }
+  .btn[aria-disabled="true"] { color: var(--muted); background: #f4f4f5; cursor: not-allowed; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px; }
+
+  /* tables */
+  table.data { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  .data th, .data td { padding: 12px; text-align: left; border-bottom: 1px solid var(--line); line-height: 24px; }
+  .data .num { text-align: right; }
+  table.fixed { table-layout: fixed; width: 460px; }
+  td.clip { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .scroller { overflow-x: auto; max-width: 480px; border: 1px solid var(--line); }
+  table.wide { min-width: 900px; }
+  table.wide th:first-child, table.wide td:first-child { position: sticky; left: 0; background: #fff; box-shadow: 4px 0 6px -4px rgba(0, 0, 0, .25); }
+  th button.sort { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; min-width: 44px; padding: 0 4px; border: 0; background: none; font: inherit; font-weight: 600; color: var(--ink); cursor: pointer; }
+  .hit { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; cursor: pointer; }
+  .hit input { width: 24px; height: 24px; margin: 0; }
+  td.act { white-space: nowrap; }
+  td a { color: var(--accent); text-decoration: underline; display: inline-flex; align-items: center; min-height: 44px; }
+
+  /* navigation */
+  nav ul, nav ol { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; padding: 0; list-style: none; }
+  nav a, nav .here { display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; color: var(--accent); text-decoration: underline; }
+  nav a[aria-current="page"] { font-weight: 700; color: var(--ink); background: #e0e7ff; text-decoration: none; }
+  nav ul a { flex-direction: column; justify-content: center; }
+  nav ul a::after { content: attr(data-label); height: 0; overflow: hidden; visibility: hidden; user-select: none; pointer-events: none; font-weight: 700; }
+  nav .here { color: var(--ink); text-decoration: none; }
+
+  /* menu and tooltips */
+  .menu { width: 240px; margin: 0 0 16px; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+  .mi { display: block; width: 100%; height: 44px; padding: 0 12px; border: 0; background: transparent; text-align: left; font: inherit; color: var(--ink); cursor: pointer; }
+  .mi.danger { color: #b42318; }
+  .menu hr, .menu [role=separator] { height: 0; margin: 4px 0; border: 0; border-top: 1px solid var(--line); }
+  .tip { display: inline-block; max-width: 280px; padding: 6px 8px; border-radius: 6px; background: var(--ink); color: #fff; font-size: 14px; line-height: 1.4; }
+  .tips { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+
+  /* switch and choices */
+  .switch { display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 44px; padding: 0; border: 0; background: none; cursor: pointer; }
+  .switch .track { width: 40px; height: 24px; border-radius: 12px; background: #52525b; position: relative; }
+  .switch .track::after { content: ""; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: #fff; }
+  .switch[aria-checked="true"] .track { background: var(--accent); }
+  .switch[aria-checked="true"] .track::after { left: 18px; }
+  .choice { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding-right: 12px; }
+  .choice input { width: 24px; height: 24px; margin: 0; }
+  fieldset { border: 0; margin: 0 0 16px; padding: 0; }
+  legend { font-weight: 600; padding: 0; }
+  input[type=search], select, input[type=text] { height: 44px; padding: 0 12px; border: 1px solid #71717a; border-radius: 8px; background: #fff; color: var(--ink); font: inherit; }
+  .dropzone { min-height: 120px; padding: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 2px dashed #71717a; border-radius: 12px; color: #3f3f46; text-align: center; }
+  .dropzone p { margin: 0; }
+
+  /* toast: bottom-right, nothing else lives there */
+  .toast { position: fixed; right: 16px; bottom: 16px; width: 320px; padding: 12px 16px; border-radius: 8px; background: var(--ink); color: #fff; z-index: 5; }
+  .toast p { margin: 0; }
+
+  /* dialog */
+  #dlg { width: min(480px, 90vw); padding: 24px; border: 0; border-radius: 12px; color: var(--ink); box-shadow: 0 16px 48px rgba(0, 0, 0, .3); }
+  #dlg h2 { margin-top: 0; }
+  #dlg label { display: block; font-size: 14px; margin-bottom: 4px; }
+  #dlg .field { margin-bottom: 16px; }
+  #dlg input { width: 100%; }
+  #dlg .actions { display: flex; gap: 12px; justify-content: flex-end; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Billing console</h1>
+
+  <h2>Invoices</h2>
+  <!-- rows are 48px; the row whose description wraps is taller on purpose and must be ignored -->
+  <table class="data" id="invoices">
+    <caption class="sr-only">Invoices</caption>
+    <thead><tr><th scope="col">Invoice</th><th scope="col" style="width:200px">Description</th><th scope="col" class="num">Amount</th></tr></thead>
+    <tbody>
+      <tr><td>INV-2041</td><td>Team plan</td><td class="num">$1,240.00</td></tr>
+      <tr><td>INV-2042</td><td>Annual plan for 25 seats, billed upfront with a purchase order</td><td class="num">$310.00</td></tr>
+      <tr><td>INV-2043</td><td>Solo plan</td><td class="num">$87.50</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Payments</h2>
+  <!-- the method name may end in an ellipsis; the number never does -->
+  <table class="data fixed" id="payments">
+    <caption class="sr-only">Payments</caption>
+    <colgroup><col style="width:100px"><col style="width:220px"><col style="width:140px"></colgroup>
+    <thead><tr><th scope="col">Payment</th><th scope="col">Method</th><th scope="col" class="num">Amount</th></tr></thead>
+    <tbody>
+      <tr><td>PAY-901</td><td class="clip" title="Visa ending 4242, issued by Northwind Federal Credit Union">Visa ending 4242, issued by Northwind Federal Credit Union</td><td class="num">$1,248,300.00</td></tr>
+      <tr><td>PAY-902</td><td class="clip">Bank transfer</td><td class="num">$2,310,990.00</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Ledger</h2>
+  <!-- scrolls sideways: the first column is sticky and carries a shadow on its edge -->
+  <div class="scroller" tabindex="0" role="region" aria-label="Ledger">
+    <table class="data wide" id="ledger">
+      <caption class="sr-only">Ledger</caption>
+      <thead><tr><th scope="col">Entry</th><th scope="col">Account</th><th scope="col">Region</th><th scope="col">Owner</th><th scope="col">Memo</th><th scope="col">Posted</th></tr></thead>
+      <tbody>
+        <tr><td>L-100</td><td>Receivables</td><td>EMEA</td><td>Ana</td><td>Quarterly true-up</td><td>2026-03-01</td></tr>
+        <tr><td>L-101</td><td>Payables</td><td>APAC</td><td>Ben</td><td>Vendor refund</td><td>2026-03-02</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Customers</h2>
+  <table class="data" id="customers">
+    <caption class="sr-only">Customers</caption>
+    <thead>
+      <tr>
+        <th scope="col"><label class="hit"><input type="checkbox"><span class="sr-only">Select all customers</span></label></th>
+        <th scope="col" aria-sort="ascending"><button type="button" class="sort">Customer <svg aria-hidden="true" width="12" height="12" viewBox="0 0 12 12"><path d="M6 2l4 5H2z" fill="currentColor"/></svg></button></th>
+        <th scope="col"><button type="button" class="sort">Plan</button></th>
+        <th scope="col">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><label class="hit"><input type="checkbox"><span class="sr-only">Select Northwind</span></label></td><td><a href="#northwind">Northwind</a></td><td>Team</td><td class="act"><button type="button" class="btn">Edit</button></td></tr>
+      <tr><td><label class="hit"><input type="checkbox"><span class="sr-only">Select Contoso</span></label></td><td><a href="#contoso">Contoso</a></td><td>Solo</td><td class="act"><button type="button" class="btn">Edit</button></td></tr>
+      <tr><td><label class="hit"><input type="checkbox"><span class="sr-only">Select Fabrikam</span></label></td><td><a href="#fabrikam">Fabrikam</a></td><td>Team</td><td class="act"><button type="button" class="btn">Edit</button></td></tr>
+    </tbody>
+  </table>
+
+  <h2>Navigation</h2>
+  <nav aria-label="Primary">
+    <ul><li><a href="#overview" aria-current="page" data-label="Overview">Overview</a></li><li><a href="#invoices" data-label="Invoices">Invoices</a></li><li><a href="#customers" data-label="Customers">Customers</a></li></ul>
+  </nav>
+  <nav aria-label="Breadcrumb">
+    <ol><li><a href="index.html">Home</a></li><li><a href="billing.html">Billing</a></li><li><span class="here" aria-current="page">Invoices</span></li></ol>
+  </nav>
+
+  <h2>Menu</h2>
+  <div class="menu" role="menu" aria-label="Project actions">
+    <button type="button" role="menuitem" class="mi">Rename</button>
+    <button type="button" role="menuitem" class="mi">Duplicate</button>
+    <div role="separator"></div>
+    <button type="button" role="menuitem" class="mi danger">Delete project</button>
+  </div>
+
+  <h2>Tooltips</h2>
+  <div class="tips">
+    <div>
+      <button type="button" class="btn" aria-describedby="tip-short">Export</button>
+      <div role="tooltip" id="tip-short" class="tip">Download as CSV</div>
+    </div>
+    <div>
+      <button type="button" class="btn" aria-disabled="true" aria-describedby="tip-off">Send reminder</button>
+      <div role="tooltip" id="tip-off" class="tip">Add a recipient first</div>
+    </div>
+  </div>
+
+  <h2>Settings</h2>
+  <!-- a switch applies now, so it lives outside the form that saves -->
+  <div class="row">
+    <label for="digest">Weekly digest</label><button type="button" class="switch" role="switch" aria-checked="true" id="digest" onclick="this.setAttribute('aria-checked', this.getAttribute('aria-checked') === 'true' ? 'false' : 'true')"><span class="track" aria-hidden="true"></span></button>
+  </div>
+  <form action="#" onsubmit="return false">
+    <div class="row">
+      <label for="region">Region</label>
+      <select id="region"><option>Europe</option><option>North America</option><option>South America</option><option>Asia Pacific</option><option>Middle East</option><option>Africa</option><option>Oceania</option><option>Antarctica</option></select>
+    </div>
+    <fieldset>
+      <legend>Plan</legend>
+      <div class="row">
+        <label class="choice"><input type="radio" name="plan" value="1"> Solo</label>
+        <label class="choice"><input type="radio" name="plan" value="2"> Team</label>
+        <label class="choice"><input type="radio" name="plan" value="3"> Business</label>
+        <label class="choice"><input type="radio" name="plan" value="4"> Enterprise</label>
+      </div>
+    </fieldset>
+    <div class="row"><label class="choice"><input type="checkbox" name="receipt"> Email me a receipt</label></div>
+    <button type="submit" class="btn">Save settings</button>
+  </form>
+
+  <h2>Files and search</h2>
+  <div class="dropzone" ondragover="event.preventDefault()" ondrop="event.preventDefault()">
+    <p>Drop invoices here, PDF or CSV up to 10 MB</p>
+    <button type="button" class="btn">Browse files</button>
+    <input type="file" hidden aria-label="Invoice files" accept=".pdf,.csv" multiple>
+  </div>
+  <div class="row" style="margin-top:16px"><label for="q">Search invoices</label><input type="search" id="q" style="width:320px" placeholder="Search by number or customer"></div>
+
+  <h2>Dialog</h2>
+  <button type="button" class="btn" id="open-dialog" onclick="document.getElementById('dlg').showModal()">New customer</button>
+  <dialog id="dlg" aria-labelledby="dlg-title">
+    <form method="dialog">
+      <h2 id="dlg-title">New customer</h2>
+      <div class="field"><label for="f1">Company</label><input type="text" id="f1" autocomplete="organization"></div>
+      <div class="field"><label for="f2">Email</label><input type="text" id="f2" autocomplete="email"></div>
+      <div class="actions"><button value="cancel" class="btn">Cancel</button><button value="ok" class="btn">Create</button></div>
+    </form>
+  </dialog>
+</main>
+
+<div class="toast" role="status"><p>Invoice INV-2041 sent to Northwind</p></div>
+</body>
+</html>

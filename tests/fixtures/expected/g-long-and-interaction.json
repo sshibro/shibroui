@@ -1,0 +1,90 @@
+{
+  "fixtures": [
+    {
+      "name": "long page: header covers anchors, no TOC, hidden reveals, heading spacing, pre overflow",
+      "url": "fixtures/longpage-bad.html",
+      "script": "audit.js",
+      "mustFlag": [
+        "SU-207",
+        "SU-209",
+        "SU-220",
+        "SU-221"
+      ],
+      "mustMatch": {
+        "SU-207": "scroll-padding-top",
+        "SU-209": "JS-set class|html\\.js",
+        "SU-220": "above",
+        "SU-221": "scroll"
+      }
+    },
+    {
+      "name": "long page: no table of contents on a 4-screen reading page (info)",
+      "url": "fixtures/longpage-bad.html",
+      "script": "audit.js",
+      "mustMatch": {
+        "SU-207": "table of contents"
+      }
+    },
+    {
+      "name": "long page clean: scroll padding, TOC, gated reveals, heading spacing, scrolling pre",
+      "url": "fixtures/longpage-good.html",
+      "script": "audit.js",
+      "mustNotFlag": [
+        "SU-207",
+        "SU-209",
+        "SU-220",
+        "SU-221"
+      ],
+      "maxFails": 0,
+      "maxWarns": 0
+    },
+    {
+      "name": "interaction states: selected tab gets wider in bold, hover hides contrast, color-only selection, disabled without a reason",
+      "url": "fixtures/interaction-bad.html",
+      "script": "audit.js",
+      "mustFlag": [
+        "SU-249",
+        "SU-250",
+        "SU-251",
+        "SU-252"
+      ],
+      "mustMatch": {
+        "SU-249": "wider at weight",
+        "SU-250": ":hover.*:1",
+        "SU-251": "color only",
+        "SU-252": "aria-describedby"
+      }
+    },
+    {
+      "name": "interaction states: padding changes on hover, pressed state fails 4.5:1, read-only styled as disabled",
+      "url": "fixtures/interaction-bad.html",
+      "script": "audit.js",
+      "mustMatch": {
+        "SU-249": "changes padding",
+        "SU-250": "aria-pressed",
+        "SU-252": "read-only field"
+      }
+    },
+    {
+      "name": "interaction states: border width changes while pressed",
+      "url": "fixtures/interaction-bad.html",
+      "script": "audit.js",
+      "mustMatch": {
+        "SU-249": "changes border-width"
+      }
+    },
+    {
+      "name": "interaction states clean: reserved bold width, paint-only hover, 4.5:1 states, non-color selection",
+      "url": "fixtures/interaction-good.html",
+      "script": "audit.js",
+      "mustNotFlag": [
+        "SU-249",
+        "SU-250",
+        "SU-251",
+        "SU-252"
+      ],
+      "maxFails": 0,
+      "maxWarns": 0
+    }
+  ]
+}

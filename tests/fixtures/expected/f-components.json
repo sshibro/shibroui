@@ -1,0 +1,132 @@
+{
+  "fixtures": [
+    {
+      "name": "components: planted spec problems",
+      "url": "fixtures/components-bad.html",
+      "script": "audit.js",
+      "mustFail": [
+        "SU-224"
+      ],
+      "mustFlag": [
+        "SU-222",
+        "SU-223",
+        "SU-224",
+        "SU-225",
+        "SU-228",
+        "SU-231",
+        "SU-233",
+        "SU-234",
+        "SU-238",
+        "SU-240",
+        "SU-241",
+        "SU-243",
+        "SU-244"
+      ],
+      "mustNotFlag": [
+        "SU-236"
+      ],
+      "mustMatch": {
+        "SU-223": "scrolls sideways",
+        "SU-224": "aria-sort",
+        "SU-228": "class",
+        "SU-231": "last crumb",
+        "SU-233": "under 32px",
+        "SU-234": "disabled",
+        "SU-238": "bottom navigation"
+      }
+    },
+    {
+      "name": "components: more planted problems (details)",
+      "url": "fixtures/components-bad.html",
+      "script": "audit.js",
+      "mustMatch": {
+        "SU-223": "truncated|clipped",
+        "SU-224": "select-all",
+        "SU-228": "font-weight|background",
+        "SU-233": "separator|divider",
+        "SU-234": "characters|focusable",
+        "SU-238": "button",
+        "SU-241": "radio|options"
+      }
+    },
+    {
+      "name": "components: open dialog is too wide, too tall, too many fields",
+      "url": "fixtures/components-bad.html",
+      "script": "audit.js",
+      "open": "#open-dialog",
+      "mustFlag": [
+        "SU-236"
+      ],
+      "mustMatch": {
+        "SU-236": "wider than 90vw"
+      }
+    },
+    {
+      "name": "components: open dialog is taller than the screen with no inner scroll",
+      "url": "fixtures/components-bad.html",
+      "script": "audit.js",
+      "open": "#open-dialog",
+      "mustMatch": {
+        "SU-236": "taller than the screen"
+      }
+    },
+    {
+      "name": "components: open dialog holds more than 6 fields",
+      "url": "fixtures/components-bad.html",
+      "script": "audit.js",
+      "open": "#open-dialog",
+      "mustMatch": {
+        "SU-236": "fields"
+      }
+    },
+    {
+      "name": "components: menu items are short for touch at 375px",
+      "url": "fixtures/components-bad.html",
+      "script": "audit.js",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "mustFlag": [
+        "SU-233"
+      ],
+      "mustMatch": {
+        "SU-233": "under 44px"
+      }
+    },
+    {
+      "name": "components: clean twin has no fails, no warns and none of the new rules",
+      "url": "fixtures/components-good.html",
+      "script": "audit.js",
+      "mustNotFlag": [
+        "SU-222",
+        "SU-223",
+        "SU-224",
+        "SU-225",
+        "SU-228",
+        "SU-231",
+        "SU-233",
+        "SU-234",
+        "SU-236",
+        "SU-238",
+        "SU-240",
+        "SU-241",
+        "SU-243",
+        "SU-244"
+      ],
+      "maxFails": 0,
+      "maxWarns": 0
+    },
+    {
+      "name": "components: clean twin with its dialog open",
+      "url": "fixtures/components-good.html",
+      "script": "audit.js",
+      "open": "#open-dialog",
+      "mustNotFlag": [
+        "SU-236"
+      ],
+      "maxFails": 0,
+      "maxWarns": 0
+    }
+  ]
+}

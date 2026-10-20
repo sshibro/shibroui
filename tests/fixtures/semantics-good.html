@@ -22,8 +22,9 @@
   .icon-btn { width: 44px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
   .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 24px; }
   [role=tablist] { display: flex; gap: 8px; }
-  [role=tab] { min-height: 44px; padding: 0 16px; border: 0; background: none; font: inherit; color: var(--muted); cursor: pointer; }
+  [role=tab] { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; min-height: 44px; padding: 0 16px; border: 0; background: none; font: inherit; color: var(--muted); cursor: pointer; }
   [role=tab][aria-selected=true] { color: var(--ink); font-weight: 600; box-shadow: inset 0 -2px 0 var(--ink); }
+  [role=tab]::after { content: attr(data-label); height: 0; overflow: hidden; visibility: hidden; user-select: none; pointer-events: none; font-weight: 600; }
   .low { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent); text-decoration: underline; }
   .spacer { height: 900px; }
   .toasts { position: fixed; right: 16px; bottom: 16px; }
@@ -46,8 +47,8 @@
     <svg role="img" aria-label="Status: healthy" width="24" height="24"><rect width="24" height="24" fill="#334155"/></svg>
   </div>
   <div role="tablist" aria-label="Views">
-    <button role="tab" id="t1" aria-selected="true" aria-controls="p1" tabindex="0">Daily</button>
-    <button role="tab" id="t2" aria-selected="false" aria-controls="p2" tabindex="-1">Weekly</button>
+    <button role="tab" id="t1" aria-selected="true" aria-controls="p1" tabindex="0" data-label="Daily">Daily</button>
+    <button role="tab" id="t2" aria-selected="false" aria-controls="p2" tabindex="-1" data-label="Weekly">Weekly</button>
   </div>
   <div role="tabpanel" id="p1" aria-labelledby="t1"><p>Daily totals refresh every hour.</p></div>
   <div role="tabpanel" id="p2" aria-labelledby="t2" hidden><p>Weekly totals refresh every night.</p></div>

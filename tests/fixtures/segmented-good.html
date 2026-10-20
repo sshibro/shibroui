@@ -10,7 +10,8 @@
   .picker { position: relative; display: flex; align-items: center; gap: 8px; width: max-content; padding: 6px; border-radius: 40px; background: #ebedf0; }
   .picker button { position: relative; z-index: 1; height: 68px; border: 0; background: none; font: inherit; font-size: 22px; color: #4b5563; cursor: pointer; }
   .picker .step, .picker .cal { width: 56px; border-radius: 34px; }
-  .picker .day { padding: 0 24px; border-radius: 34px; }
+  .picker .day { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 24px; border-radius: 34px; }
+  .picker .day::after { content: attr(data-label); height: 0; overflow: hidden; visibility: hidden; user-select: none; pointer-events: none; font-weight: 600; }
   .picker .day[aria-checked=true] { color: #6d28d9; font-weight: 600; }
   .indicator { position: absolute; top: 6px; height: 68px; border-radius: 34px; background: #ffffff; box-shadow: 0 1px 3px rgb(0 0 0 / .12); }
   .chip { display: inline-flex; align-items: center; height: 40px; margin-top: 24px; padding: 0 20px; border-radius: 20px; background: #ede9fe; color: #5b21b6; font-size: 16px; }
@@ -21,9 +22,9 @@
 <div class="picker" role="radiogroup" aria-label="День">
   <span class="indicator" aria-hidden="true"></span>
   <button class="step" aria-label="Предыдущий день">‹</button>
-  <button class="day" role="radio" aria-checked="false">Вчера</button>
-  <button class="day" role="radio" aria-checked="true">Сегодня</button>
-  <button class="day" role="radio" aria-checked="false">Завтра</button>
+  <button class="day" role="radio" aria-checked="false" data-label="Вчера">Вчера</button>
+  <button class="day" role="radio" aria-checked="true" data-label="Сегодня">Сегодня</button>
+  <button class="day" role="radio" aria-checked="false" data-label="Завтра">Завтра</button>
   <button class="step" aria-label="Следующий день">›</button>
   <button class="cal" aria-label="Выбрать дату">📅</button>
 </div>

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interaction states (problems)</title>
+<style>
+  :root { --on: #60a5fa; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, system-ui, sans-serif; font-size: 16px; line-height: 1.5; background: #fff; color: #18181b; }
+  :focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+  main { max-width: 720px; margin: 0 auto; padding: 32px 24px; }
+  section { margin-bottom: 32px; }
+  h1 { font-size: 28px; line-height: 1.2; margin: 0 0 24px; }
+  h2 { font-size: 18px; line-height: 1.3; margin: 0 0 12px; }
+
+  /* SU-249: selecting a tab changes its weight (the neighbours jump); hover and press change the box */
+  .tabs { display: flex; gap: 8px; border-bottom: 1px solid #d4d4d8; }
+  .tab { min-height: 44px; padding: 0 20px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #3f3f46; font: inherit; }
+  .tab[aria-selected="true"] { font-weight: 700; color: #18181b; border-bottom-color: #2563eb; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .chip { display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; border: 1px solid #71717a; border-radius: 8px; background: #fff; color: #18181b; }
+  .chip:hover { padding: 0 20px; }
+  .tile { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid #71717a; border-radius: 8px; background: #fff; color: #18181b; }
+  .tile:active { border-width: 3px; }
+
+  /* SU-250: the state's own text/background pair fails 4.5:1 */
+  .ghost { min-height: 44px; padding: 0 16px; border: 1px solid #71717a; border-radius: 8px; background: #fff; color: #18181b; font: inherit; }
+  .ghost:hover { background-color: #bfdbfe; color: #93c5fd; }
+  .toggle { min-height: 44px; padding: 0 16px; border: 1px solid #71717a; border-radius: 8px; background: #fff; color: #18181b; font: inherit; }
+  .toggle[aria-pressed="true"] { background: var(--on); color: #fff; border-color: var(--on); }
+
+  /* SU-251: the current page differs from the others by a color change only */
+  .links { display: flex; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .links a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; color: #3f3f46; text-decoration: none; }
+  .links a[aria-current="page"] { color: #2563eb; }
+
+  /* SU-252: a disabled button with no reason; a read-only field styled like a disabled one */
+  .field { display: flex; flex-direction: column; gap: 8px; max-width: 320px; margin-top: 16px; }
+  .field input { height: 44px; padding: 0 12px; font: inherit; border: 1px solid #a1a1aa; border-radius: 8px; background: #fff; color: #18181b; }
+  .field input[readonly] { opacity: .5; background: #f4f4f5; }
+  .publish { min-height: 44px; padding: 0 16px; border: 1px solid #a1a1aa; border-radius: 8px; background: #f4f4f5; color: #52525b; font: inherit; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Interaction states</h1>
+  <section>
+    <h2>Tabs</h2>
+    <div class="tabs" role="tablist" aria-label="Project">
+      <button class="tab" role="tab" aria-selected="false" id="t1">Overview</button>
+      <button class="tab" role="tab" aria-selected="true" id="t2">Activity</button>
+      <button class="tab" role="tab" aria-selected="false" id="t3">Settings</button>
+    </div>
+  </section>
+  <section>
+    <h2>Hover and press</h2>
+    <div class="row"><a class="chip" href="/tags/design">Design</a><a class="tile" href="/tags/code">Code</a></div>
+  </section>
+  <section>
+    <h2>State colors</h2>
+    <div class="row"><button class="ghost">Preview</button><button class="toggle" aria-pressed="true">Notifications</button></div>
+  </section>
+  <section>
+    <h2>Current page</h2>
+    <nav aria-label="Account"><ul class="links">
+      <li><a href="/account/profile" aria-current="page">Profile</a></li>
+      <li><a href="/account/billing">Billing</a></li>
+      <li><a href="/account/security">Security</a></li>
+    </ul></nav>
+  </section>
+  <section>
+    <h2>Publish</h2>
+    <div><button class="publish" disabled>Publish</button></div>
+    <div class="field"><label for="slug">Slug</label><input id="slug" value="handbook-2026" readonly></div>
+  </section>
+</main>
+</body>
+</html>

@@ -62,6 +62,8 @@
       checked('interactive targets');
       const isField = el.matches(TEXT_FIELD);
       if (isField && rect.height >= 32) continue;
+      // Menu items and options are specced at 32–40px with a pointer (SU-233); the 44px goal applies on touch widths.
+      if (el.matches('[role^=menuitem], [role=option]') && rect.height >= 32 && innerWidth > LIMITS.narrowViewport) { checked('menu items at pointer size (SU-233)'); continue; }
       // A target under an open dropdown or popover isn't reachable right now; it's audited in the closed state.
       const centerHit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
       if (centerHit && !el.contains(centerHit) && !related.some((n) => n.contains(centerHit)) && !centerHit.contains(el)) { skipped('target covered by an overlay'); continue; }

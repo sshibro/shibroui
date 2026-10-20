@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workspace handbook (long page, problems)</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, system-ui, sans-serif; font-size: 16px; line-height: 1.5; background: #fff; color: #18181b; }
+  :focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+  .skip { position: absolute; left: -9999px; top: 8px; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; background: #fff; color: #18181b; }
+  .skip:focus { left: 8px; z-index: 20; }
+  .site { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 16px; height: 64px; padding: 0 24px; background: #fff; border-bottom: 1px solid #e4e4e7; }
+  .site a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; color: #18181b; text-decoration: none; }
+  main { max-width: 720px; margin: 0 auto; padding: 32px 24px 64px; }
+  h1 { font-size: 32px; line-height: 1.2; margin: 0 0 16px; }
+  h2 { font-size: 24px; line-height: 1.25; margin: 0 0 16px; }
+  h3 { font-size: 18px; line-height: 1.3; margin: 8px 0 24px; }
+  p { max-width: 65ch; margin: 0 0 16px; }
+  p a { color: #1d4ed8; text-decoration: underline; text-underline-offset: .2em; }
+  .band { min-height: 900px; padding-top: 24px; }
+  .toc ul { margin: 0 0 24px; padding: 0; list-style: none; }
+  .toc a { display: inline-flex; align-items: center; min-width: 44px; min-height: 44px; color: #1d4ed8; }
+  .snippet { max-width: 420px; margin-bottom: 16px; }
+  pre { margin: 0; padding: 12px; font: 13px/1.5 ui-monospace, Menlo, monospace; white-space: pre; background: #f4f4f5; color: #18181b; overflow: visible; }
+  .reveal { transition: opacity 300ms ease-out, transform 300ms ease-out; }
+  .reveal { opacity: 0; transform: translateY(16px); }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .reveal { transition: none; transform: none; } }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site"><a href="/">Handbook</a><a href="/docs">Docs</a><a href="/support">Support</a></header>
+<main id="main" tabindex="-1">
+  <h1>Workspace handbook</h1>
+  <p>Start with the <a href="#pricing">pricing</a> or jump to the <a href="#faq">questions people ask most</a>; the rest of the page walks through how a workspace is run day to day, from the first draft to the final export.</p>
+  <section id="overview" class="band">
+    <h2>Overview</h2>
+    <p>Every project starts as a plain folder of notes, and the team decides together when a note is ready to leave the draft stage and join the shared record.</p>
+    <p>Reviews happen in the open: anyone can comment on a change, and the author answers each comment before the change is merged into the main line of work.</p>
+    <h3>Retention</h3>
+    <p>Access is granted per project rather than per person, so moving someone between teams never means re-sharing a long list of individual files by hand.</p>
+    <div class="reveal"><p>Automations run with the same permissions as the person who created them, so a script can never reach further than its owner could reach on their own.</p></div>
+    <p>Every export keeps its original timestamps and authorship, which makes audits quick and keeps the history readable for people who join the team much later.</p>
+  </section>
+  <section id="pricing" class="band">
+    <h2>Pricing</h2>
+    <p>Reviews happen in the open: anyone can comment on a change, and the author answers each comment before the change is merged into the main line of work.</p>
+    <p>Access is granted per project rather than per person, so moving someone between teams never means re-sharing a long list of individual files by hand.</p>
+    <h3>Retention</h3>
+    <p>Every export keeps its original timestamps and authorship, which makes audits quick and keeps the history readable for people who join the team much later.</p>
+    <div class="snippet">
+      <pre>retention: { archive_after_days: 90, delete_after_days: 365, notify: ["owners", "admins"], export_format: "jsonl" }</pre>
+    </div>
+    <div class="reveal"><p>Every export keeps its original timestamps and authorship, which makes audits quick and keeps the history readable for people who join the team much later.</p></div>
+    <p>Automations run with the same permissions as the person who created them, so a script can never reach further than its owner could reach on their own.</p>
+  </section>
+  <section id="security" class="band">
+    <h2>Security</h2>
+    <p>Access is granted per project rather than per person, so moving someone between teams never means re-sharing a long list of individual files by hand.</p>
+    <p>Every export keeps its original timestamps and authorship, which makes audits quick and keeps the history readable for people who join the team much later.</p>
+    <h3>Retention</h3>
+    <p>Automations run with the same permissions as the person who created them, so a script can never reach further than its owner could reach on their own.</p>
+    <div class="reveal"><p>Automations run with the same permissions as the person who created them, so a script can never reach further than its owner could reach on their own.</p></div>
+    <p>Billing is monthly and metered by active members only; archived projects cost nothing and can be restored at any time without a support request.</p>
+  </section>
+  <section id="faq" class="band">
+    <h2>FAQ</h2>
+    <p>Every export keeps its original timestamps and authorship, which makes audits quick and keeps the history readable for people who join the team much later.</p>
+    <p>Automations run with the same permissions as the person who created them, so a script can never reach further than its owner could reach on their own.</p>
+    <h3>Retention</h3>
+    <p>Billing is monthly and metered by active members only; archived projects cost nothing and can be restored at any time without a support request.</p>
+    <div class="reveal"><p>Billing is monthly and metered by active members only; archived projects cost nothing and can be restored at any time without a support request.</p></div>
+    <p>Every project starts as a plain folder of notes, and the team decides together when a note is ready to leave the draft stage and join the shared record.</p>
+  </section>
+</main>
+<script>
+  const io = new IntersectionObserver((entries) => entries.forEach((entry) => {
+    if (entry.isIntersecting) { entry.target.classList.add('in'); io.unobserve(entry.target); }
+  }), { threshold: 0.2 });
+  document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+</script>
+</body>
+</html>

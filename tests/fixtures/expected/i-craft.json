@@ -1,0 +1,41 @@
+{
+  "fixtures": [
+    {
+      "name": "craft: muddy gradient, small gradient text, loose display type, blurry image, uneven logos, no finishes",
+      "url": "fixtures/craft-bad.html",
+      "script": "audit.js",
+      "mustFlag": [
+        "SU-255",
+        "SU-258",
+        "SU-259",
+        "SU-260",
+        "SU-263"
+      ],
+      "mustMatch": {
+        "SU-255": "midpoint|gradient text",
+        "SU-258": "letter-spacing",
+        "SU-259": "naturalWidth",
+        "SU-260": "area",
+        "SU-263": "scrollbar-gutter.*overscroll-behavior.*::selection.*accent-color.*caret-color"
+      },
+      "maxFails": 0,
+      "mustNotFlag": [
+        "SU-45"
+      ]
+    },
+    {
+      "name": "craft: oklch gradients, tracked display type, crisp image, balanced logos, finishes set",
+      "url": "fixtures/craft-good.html",
+      "script": "audit.js",
+      "mustNotFlag": [
+        "SU-255",
+        "SU-258",
+        "SU-259",
+        "SU-260",
+        "SU-263"
+      ],
+      "maxFails": 0,
+      "maxWarns": 0
+    }
+  ]
+}

@@ -17,8 +17,10 @@
   .topbar { display: flex; align-items: center; gap: var(--s6); height: 56px; padding: 0 var(--s6); background: var(--surface); border-bottom: 1px solid var(--border); }
   .logo { font-weight: 600; font-size: 16px; }
   .topbar nav { display: flex; gap: var(--s2); }
-  .topbar nav a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 var(--s3); color: var(--muted); text-decoration: none; font-size: 14px; }
+  .topbar nav a { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; min-height: 44px; padding: 0 var(--s3); color: var(--muted); text-decoration: none; font-size: 14px; }
   .topbar nav a[aria-current=page] { color: var(--ink); font-weight: 600; }
+  /* The bold width is reserved by a hidden bold copy, so selecting an item never moves its neighbours (SU-249). */
+  .topbar nav a::after, [role=tab]::after { content: attr(data-label); height: 0; overflow: hidden; visibility: hidden; user-select: none; pointer-events: none; font-weight: 600; }
   .top-right { margin-left: auto; display: flex; align-items: center; gap: var(--s3); }
   .icon-btn { position: relative; width: 32px; height: 32px; border: 1px solid var(--border); border-radius: var(--r-control); background: var(--surface); color: var(--ink); font: inherit; font-size: 14px; }
   .icon-btn::before { content: ""; position: absolute; inset: -7px; } /* padding box + 1px border: 32 + 2×6 = 44 */
@@ -60,7 +62,7 @@
   .badge { display: inline-flex; align-items: center; gap: var(--s1); padding: 2px var(--s2); border-radius: 999px; font-size: 12px; font-weight: 500; }
   .badge.paid { background: #dcfce7; color: #14532d; } .badge.pending { background: #fef3c7; color: #78350f; } .badge.refunded { background: #fee2e2; color: #7f1d1d; }
   [role=tablist] { display: flex; gap: var(--s2); border-bottom: 1px solid var(--border); margin-bottom: var(--s4); }
-  [role=tab] { position: relative; min-height: 44px; padding: 0 var(--s3); border: 0; background: none; font: inherit; font-size: 14px; color: var(--muted); }
+  [role=tab] { position: relative; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; min-height: 44px; padding: 0 var(--s3); border: 0; background: none; font: inherit; font-size: 14px; color: var(--muted); }
   [role=tab][aria-selected=true] { color: var(--ink); font-weight: 600; box-shadow: inset 0 -2px 0 var(--ink); }
   .option { display: flex; align-items: center; gap: var(--s2); min-height: 40px; user-select: none; font-size: 14px; }
   .hint { color: var(--muted); font-size: 14px; }
@@ -84,7 +86,7 @@
 <a class="skip" href="#main">Skip to main content</a>
 <header class="topbar">
   <span class="logo">Acme Analytics</span>
-  <nav aria-label="Primary"><a href="/overview" aria-current="page">Overview</a><a href="/reports">Reports</a><a href="/customers">Customers</a></nav>
+  <nav aria-label="Primary"><a href="/overview" aria-current="page" data-label="Overview">Overview</a><a href="/reports" data-label="Reports">Reports</a><a href="/customers" data-label="Customers">Customers</a></nav>
   <div class="top-right">
     <button class="icon-btn" aria-label="Notifications">🔔</button>
     <button class="icon-btn" aria-label="Help">?</button>
@@ -135,8 +137,8 @@
     <section class="card">
       <h2>Report settings</h2>
       <div role="tablist" aria-label="Report settings" style="margin-top: 16px">
-        <button role="tab" id="tab-general" aria-selected="true" aria-controls="panel-general" tabindex="0">General</button>
-        <button role="tab" id="tab-alerts" aria-selected="false" aria-controls="panel-alerts" tabindex="-1">Alerts</button>
+        <button role="tab" id="tab-general" aria-selected="true" aria-controls="panel-general" tabindex="0" data-label="General">General</button>
+        <button role="tab" id="tab-alerts" aria-selected="false" aria-controls="panel-alerts" tabindex="-1" data-label="Alerts">Alerts</button>
       </div>
       <div role="tabpanel" id="panel-general" aria-labelledby="tab-general"><p class="hint">Reports refresh every 15 minutes, in your workspace time zone.</p></div>
       <div role="tabpanel" id="panel-alerts" aria-labelledby="tab-alerts" hidden>

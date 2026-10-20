@@ -4,7 +4,11 @@
       "name": "dogfood #3: target under a sticky header is scrolled clear before the probe (SU-61/62)",
       "url": "fixtures/dogfood-sticky-probe.html",
       "script": "audit.js",
-      "mustNotFlag": ["SU-61", "SU-62", "SU-69"],
+      "mustNotFlag": [
+        "SU-61",
+        "SU-62",
+        "SU-69"
+      ],
       "maxFails": 0,
       "maxWarns": 0
     },
@@ -12,7 +16,9 @@
       "name": "dogfood #5: label under its button's hit-area ::before is still contrast-checked (SU-46)",
       "url": "fixtures/dogfood-hit-area.html",
       "script": "audit.js",
-      "mustFail": ["SU-46"],
+      "mustFail": [
+        "SU-46"
+      ],
       "maxFails": 1,
       "maxWarns": 0
     },
@@ -21,7 +27,10 @@
       "url": "fixtures/dogfood-scroll-panel.html",
       "script": "audit.js",
       "setup": "window.__shibroAudit = { root: '#panel' }",
-      "mustNotFlag": ["SU-61", "SU-62"],
+      "mustNotFlag": [
+        "SU-61",
+        "SU-62"
+      ],
       "maxFails": 0,
       "maxWarns": 0
     },
@@ -30,8 +39,12 @@
       "url": "fixtures/dogfood-scroll-panel.html",
       "script": "audit.js",
       "setup": "window.__shibroAudit = { root: '#chips' }",
-      "mustFlag": ["SU-62"],
-      "mustMatch": { "SU-62": "scrolling container div\\.chips" },
+      "mustFlag": [
+        "SU-62"
+      ],
+      "mustMatch": {
+        "SU-62": "scrolling container div\\.chips"
+      },
       "maxFails": 0
     },
     {
@@ -39,31 +52,80 @@
       "url": "fixtures/dogfood-translucent.html",
       "script": "page-map.js",
       "colorScheme": "dark",
-      "mustNotFlag": ["SU-127"],
+      "mustNotFlag": [
+        "SU-127"
+      ],
       "maxWarns": 0
     },
     {
       "name": "dogfood #8 page map: off-scale spacing from a default h4 margin carries a hint (SU-125)",
       "url": "fixtures/dogfood-heading-margins.html",
       "script": "page-map.js",
-      "mustFlag": ["SU-125"],
-      "mustMatch": { "SU-125": "21px×2 \\(browser default margin on h4\\)" }
+      "mustFlag": [
+        "SU-125"
+      ],
+      "mustMatch": {
+        "SU-125": "21px\u00d72 \\(browser default margin on h4\\)"
+      }
     },
     {
       "name": "dogfood #9 page map: clean dashboard, export dialog open (SU-132)",
       "url": "fixtures/dashboard-good.html",
       "script": "page-map.js",
       "open": "#export-btn",
-      "mustNotFlag": ["SU-132"],
+      "mustNotFlag": [
+        "SU-132"
+      ],
       "maxWarns": 0
     },
     {
       "name": "dogfood #10: a target under a sticky bar's button is not an overlap (SU-69)",
       "url": "fixtures/dogfood-sticky-overlap.html",
       "script": "audit.js",
-      "mustNotFlag": ["SU-69", "SU-63"],
+      "mustNotFlag": [
+        "SU-69",
+        "SU-63"
+      ],
       "maxFails": 0,
       "maxWarns": 0
+    },
+    {
+      "name": "dogfood #11: bold width reserved on a child label, 36px menu items at pointer width (SU-249, SU-62)",
+      "url": "fixtures/dogfood-reserve-child.html",
+      "script": "audit.js",
+      "mustNotFlag": [
+        "SU-249",
+        "SU-62",
+        "SU-61"
+      ],
+      "maxFails": 0
+    },
+    {
+      "name": "dogfood #12 (blind judge): a 6-column table scrolls sideways on a phone, and the page header holds 4 actions (SU-223, SU-134 info)",
+      "url": "fixtures/dogfood-phone-table.html",
+      "script": "audit.js",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "mustFlag": [
+        "SU-223",
+        "SU-134"
+      ],
+      "mustMatch": {
+        "SU-223": "scrolls sideways at 375px",
+        "SU-134": "4 actions"
+      },
+      "maxFails": 0
+    },
+    {
+      "name": "dogfood #12 at desktop: no phone-table note",
+      "url": "fixtures/dogfood-phone-table.html",
+      "script": "audit.js",
+      "mustNotFlag": [
+        "SU-223"
+      ],
+      "maxFails": 0
     }
   ]
 }

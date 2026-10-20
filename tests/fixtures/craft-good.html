@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Launch page (visual craft, clean)</title>
+<style>
+  * { box-sizing: border-box; }
+  html { scrollbar-gutter: stable; accent-color: #2563eb; }
+  body { margin: 0; font-family: -apple-system, system-ui, sans-serif; font-size: 18px; line-height: 1.6; background: #fff; color: #18181b; caret-color: #2563eb; }
+  ::selection { background: #bfdbfe; color: #18181b; }
+  :focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+  main { max-width: 960px; margin-inline: auto; padding: 0 24px; }
+  section { padding: 64px 0; }
+  .eyebrow { margin: 0 0 12px; font-size: 16px; font-weight: 600; color: #1d4ed8; }
+  h1 { margin: 0 0 20px; max-width: 14ch; font-size: 64px; font-weight: 700; line-height: 1.05; letter-spacing: -0.03em; text-wrap: balance; }
+  h2 { margin: 0 0 12px; font-size: 32px; line-height: 1.2; letter-spacing: -0.01em; }
+  .lede { margin: 0 0 28px; max-width: 56ch; color: #3f3f46; }
+  .button { display: inline-flex; align-items: center; min-height: 48px; padding: 0 24px; border-radius: 10px; background: #1d4ed8; color: #fff; font-weight: 600; text-decoration: none; }
+  .band { height: 96px; border-radius: 16px; background: linear-gradient(in oklch, oklch(0.55 0.22 260), oklch(0.62 0.2 300)); }
+  .rule { height: 6px; margin-top: 16px; border-radius: 3px; background: linear-gradient(90deg, #2563eb, #7c3aed); }
+  .stat { margin: 0 0 8px; font-size: 20px; font-weight: 600; color: #1d4ed8; }
+  .shot { display: block; width: 100%; max-width: 320px; height: auto; border-radius: 12px; border: 1px solid rgb(0 0 0 / .1); }
+  .logos { display: flex; flex-wrap: wrap; align-items: center; gap: 32px; margin: 24px 0 0; padding: 0; list-style: none; }
+  .logos li { display: flex; align-items: center; }
+  .logos img { display: block; }
+  form { display: grid; gap: 12px; max-width: 360px; }
+  label { display: block; font-size: 16px; font-weight: 600; }
+  input[type=email] { width: 100%; min-height: 48px; margin-top: 6px; padding: 0 12px; border: 1px solid #52525b; border-radius: 10px; font: inherit; }
+  .check { display: flex; align-items: center; gap: 12px; min-height: 48px; font-weight: 400; }
+  .check input { width: 24px; height: 24px; margin: 0; }
+  button { min-height: 48px; padding: 0 24px; border: 0; border-radius: 10px; background: #1d4ed8; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+  .changes { max-height: 160px; overflow-y: auto; overscroll-behavior: contain; border: 1px solid rgb(0 0 0 / .1); border-radius: 12px; padding: 12px 16px; }
+  dialog { overscroll-behavior: contain; max-width: 420px; border: 1px solid rgb(0 0 0 / .1); border-radius: 16px; padding: 24px; }
+  footer { max-width: 960px; margin-inline: auto; padding: 24px; font-size: 16px; color: #52525b; }
+</style>
+</head>
+<body>
+<main id="main">
+  <section>
+    <p class="eyebrow">Version 4 is out</p>
+    <h1>Interfaces people trust at first sight</h1>
+    <p class="lede">Numbers for spacing, color and type, checked on every screen before it ships to your customers.</p>
+    <a class="button" href="#start">Start free</a>
+    <div class="rule" aria-hidden="true"></div>
+  </section>
+  <section>
+    <div class="band" role="img" aria-label="Blue to violet gradient"></div>
+  </section>
+  <section>
+    <h2>Product tour</h2>
+    <p class="stat">4,000 teams ship with it</p>
+    <img class="shot" width="320" height="192" alt="The dashboard with three summary cards" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAoAAAAGACAIAAACyR0TpAAAK5klEQVR42u3VsRGEMAxFQVdCTg3uvxEiQhw4cGS6QBq0mq3g/uHXjrMT6LofAApqEijAAAiwAAMgwAgwAAIswAAIMAIMgAALMAACjAADIMACDIAAI8AACLAAAyDAAgyAACPAAAiwAAMgwAgwAAIswAAIMAIMgAALMAACjAADIMACDIAACzAAAowAAyDAAgyAACPAAAiwAAMgwAgwAAIswAAIMAIMgAALMAACLMAACDACDIAACzAAAowAAyDAAgyAACPAAAiwAAMgwAgwAAIswAAIsAADIMAIMAACLMAACDACDIAACzAAAowAAyDAAgyAACPAAAiwAAMgwNWNuQAoSIAFGAABFmAABBgBBkCABRgAAUaAARBgAQZAgBFgAARYgAEQYAQYAAEWYAAEWIABEGAEGAABFmAABBgBBkCABRgAAUaAARBgAQZAgBFgAARYgAEQYAEGQIARYAAEWIABEGAEGAABFmAABBgBBkCABRgAAUaAARBgAQZAgAUYAAFGgAEQYAEGQIARYAAEWIABEGAEGAABFmAABBgBBkCABRgAARZgAAQYAQZAgAUYAAFGgAEQYAEGQIARYAAEWIABEGAEGAABFmAABFiA/QsBBBgBBkCABRgAAeZHAd4u2dnXvvYtuK8AC7DzQDv7OgEWYAH2AdvXvvYVYATYeaCdfZ0AC7AP2AdsX/vaV4ARYOeBdvZ1AizAPmAPtH3t6wQYAXYeaGdf+wqwAPuAPdDOvk6AEWDngbavfe0rwALsPNDOvk6ABViAfcD2ta99BRgBdh5oZ18nwALsA/YB29e+9hVgBNh5oJ19nQALsA/YA21f+zoBRoCdB9rZ174CLMA+YA+0s68TYATYeaDta1/7CrAAOw+0s68TYAEWYB+wfe1rXwFGgJ0H2tnXCbAAC7AP2L72ta8AI8DOA+3s6wRYgH3AHmj72tcJMALsPNDOvvYVYAH2AXugnX2dACPAzgNtX/vaV4AF2HmgnX2dAAuwAPuA7Wtf+wowAuw80M6+ToAFWIB9wPa1r30FGAF2HmhnXyfAAuwD9kDb175OgBFg54F29rWvAAuwD9gD7ezrBBgBdh5o+9rXvgIswM4D7ezrBFiABdgHbF/72leAEWDngXb2dQIswALsA7avfe0rwAiw80A7+zoBFmAfsA/YvvZ1AowAOw+0s699BViAfcAeaGdfJ8AIsPNA29e+9hVgAfYBe6CdfZ0AC7AAOw+0fe0rwAiw80A7+zoBFmAB9gHb1772FWAE2HmgnX2dAAuwD9gHbF/7OgFGgJ0H2tnXvgIswD5gD7SzrxNgBNh5oO1rX/sKsAD7gD3Qzr5OgBFg54G2r30FGAF2HmhnXyfAAizAPmD72te+AowAOw+0s68TYAH2AfuA7WtfJ8AIsPNAO/vaV4AF2AfsgXb2dQKMADsPtLOvfQVYgH3AHmhnXyfACLDzQNvXvgKMADsPtLOvE2ABFmAfsH3ta18BRoCdB9rZ1wmwAPuAfcD2ta8TYATYeaCdfe0rwALsA/ZA29e+ToARYOeBdva1rwALsA/YA+3s6wQYAXYeaPvaV4ARYOeBdvZ1AizAAuwDtq997SvACLDzQDv7OgEWYB+wD9i+9nUCjAA7D7Szr30FWIB9wB5o+9rXCTAC7DzQzr72FWAB9gF7oJ19nQAjwM4DbV/7CrAECrDzQDv7OgEWYAH2AdvXvvYVYATYeaCdfZ0AC7AP2AdsX/v6PQUYAXYeaGdfJ8AC7AP2QNvXvk6AEWDngXb2ta8AC7AP2APt7OsEGAF2Hmj72te+AizAzgPt7OsEWIAF2AdsX/vaV4ARYOeBdvZ1AizAPmAfsH3ta18BRoCdB9rZ1wmwAPuAPdD2ta8TYATYeaCdfe0rwALsA/ZAO/s6AUaAnQfavva1rwALsPNAO/s6ARZgAfYB29e+9hVgBNh5oJ19nQALsA/YB2xf+9pXgBFg54F29nUCLMA+YA+0fe3rBBgBdh5oZ1/7CrAA+4A90M6+ToARYOeBtq997SvAAuw80M6+ToAFWIB9wPa1r30FGAF2HmhnXyfAAizAPmD72te+AowAOw+0s68TYAH2AXug7WtfJ8AIsPNAO/vaV4AF2AfsgXb2dQKMADsPtH3ta18BFmDngXb2dQIswALsA7avfe0rwAiw80A7+zoBFmAB9gHb1772FWAE2HmgnX2dAAuwD9gDbV/7OgFGgJ0H2tnXvgIswD5gD7SzrxNgBNh5oO1rX/sKsAD7YDzQzr5OgAVYgJ0H2r72FWAE2HmgnX2dAAuwAPuA7Wtf+wowAuw80M6+ToAF2AfsA7avfZ0AI8DOA+3sa18BFmAfsAfa2dcJMALsPND2ta99BViAfcAeaGdfJ8AIsPNA29e+AowAOw+0s68TYAEWYB+wfe1rXwFGgJ0H2tnXCbAA+4B9wPa1rxNgBNh5oJ197SvAAuwD9kA7+zoBRoCdB9q+9rWvAAuwD9gD7ezrBBgBdh5o+9pXgBFg54F29nUCLMAC7AO2r33tK8AIsPNAO/s6ARZgH7AP2L72dQKMADsPtLOvfQVYgH3AHmj72tcJMALsPNDOvvYVYAH2AXugnX2dACPAzgNtX/sKMALsPNDOvk6ABViAfcD2ta99BRgBdh5oZ18nwALsA/YB29e+ToARYOeBdva1rwALsA/YA21f+zoBRoCdB9rZ174CLMA+YA+0s68TYATYeaDta18BVkEBdh5oZ18nwAIswD5g+9rXvgKMADsPtLOvE2AB9gH7gO1rXyfACLDzQDv7OgEWYB+wB9q+9nUCjAA7D7Szr30FWIB9wB5oZ18nwAiw80Db1772FWABdh5oZ18nwAIswD5g+9rXvgKMADsPtLOvE2AB9gH7gO1rX/sKMALsPNDOvk6ABdgH7IG2r32dACPAzgPt7GtfARZgH7AH2tnXCTAC7DzQ9rWvfQVYgJ0H2tnXCbAAC7AP2L72ta8AI8DOA+3s6wRYgH3APmD72te+AowAOw+0s68TYAH2AXug7WtfJ8AIsPNAO/vaV4AF2AfsgXb2dQKMADsPtH3ta18BFmDngXb2dQIswALsA7avfe0rwAiw80A7+zoBFmAB9gHb1772FWAE2HmgnX2dAAuwD9gDbV/7OgFGgJ0H2tnXvgIswD5gD7SzrxNgBNh5oO1rX/sKsAA7D7SzrxNgARZgH7B97WtfAUaAnQfa2dcJsAALsA/Yvva1rwAjwM4D7ezrBFiAfcAeaPva1wkwAuw80M6+9hVgAfYBe6CdfZ0AkyvAAIQTYAEGQIAFGAABRoABEGABBkCAEWAABFiAARBgBBgAARZgAAQYAQZAgAUYAAEWYAAEGAEGQIAFGAABRoABEGABBkCAEWAABFiAARBgBBgAARZgAARYgAEQYAQYAAEWYAAEGAEGQIAFGAABRoABEGABBkCAEWAABFiAARBgAQZAgBFgAARYgAEQYAQYAAEWYAAEGAEGQIAFGAABRoABEGABBkCABRgAAUaAARBgAQZAgBFgAARYgAEQYAQYAAEWYAAEGAEGQIAFGAABFmD/QgABRoABEGABBkCAEWAABFiAARBgBBgAARZgAAQYAQZAgAUYAAFGgAEEGAEGQIAFGAABRoABEGABBkCAEWAABFiAARBgBBgAARZgAAQYAQYQYAQYAAEWYAAEGAEGQIAFGAABRoABEGABBkCAEWAABFiAARBgBBhAgBFgAD72Ag1KRn1SxVkkAAAAAElFTkSuQmCC">
+  </section>
+  <section>
+    <h2>Trusted by</h2>
+    <ul class="logos">
+      <li><img width="120" height="20" alt="Northwind" src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='20'%3E%3Crect width='120' height='20' fill='%2371717a'/%3E%3C/svg%3E"></li>
+      <li><img width="48" height="48" alt="Orbit" src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48'%3E%3Crect width='48' height='48' fill='%2371717a'/%3E%3C/svg%3E"></li>
+      <li><img width="100" height="24" alt="Lumen" src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='24'%3E%3Crect width='100' height='24' fill='%2371717a'/%3E%3C/svg%3E"></li>
+      <li><img width="56" height="44" alt="Pillar" src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='44'%3E%3Crect width='56' height='44' fill='%2371717a'/%3E%3C/svg%3E"></li>
+      <li><img width="80" height="30" alt="Fieldstone" src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='30'%3E%3Crect width='80' height='30' fill='%2371717a'/%3E%3C/svg%3E"></li>
+    </ul>
+  </section>
+  <section>
+    <h2>Get the changelog</h2>
+    <form action="#" onsubmit="return false">
+      <label>Email address <input type="email" name="email" autocomplete="email"></label>
+      <label class="check"><input type="checkbox" name="digest"> Send me the monthly digest</label>
+      <button type="submit">Subscribe</button>
+    </form>
+  </section>
+  <section>
+    <h2>Release notes</h2>
+    <div class="changes" tabindex="0" role="region" aria-label="Release notes">
+      <p>4.0: display type tier, gradient checks and crisp imagery rules.</p>
+      <p>3.9: forms, validation and microcopy.</p>
+      <p>3.8: reflow, zoom and touch targets.</p>
+      <p>3.7: theming and forced colors.</p>
+      <p>3.6: motion budgets.</p>
+      <p>3.5: focus and keyboard order.</p>
+    </div>
+  </section>
+  <dialog aria-labelledby="d-title"><h2 id="d-title">Subscribed</h2><p>Check your inbox.</p><form method="dialog"><button>Close</button></form></dialog>
+</main>
+<footer>Questions? hello@example.com</footer>
+</body>
+</html>

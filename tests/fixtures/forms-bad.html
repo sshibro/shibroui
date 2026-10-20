@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign up (forms bad)</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, system-ui, sans-serif; font-size: 16px; line-height: 1.5; color: #18181b; background: #fff; }
+  main { padding: 24px; max-width: 560px; }
+  label { display: block; margin-bottom: 4px; }
+  input { display: block; width: 100%; height: 44px; margin-bottom: 16px; padding: 0 12px; font: inherit; border: 1px solid #52525b; border-radius: 8px; }
+  input::placeholder { color: #bdbdbd; }
+  input:invalid { border-color: #dc2626; }
+  button { height: 44px; padding: 0 16px; font: inherit; }
+  .otp { display: flex; gap: 8px; margin-bottom: 16px; }
+  .otp input { width: 48px; margin: 0; text-align: center; }
+  .tall { height: 900px; }
+  form { margin-bottom: 32px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Create account</h1>
+  <form id="signup">
+    <label for="em">Email</label>
+    <input id="em" name="email" type="email" required>
+    <label for="ph">Phone</label>
+    <input id="ph" name="phone" type="tel">
+    <label for="co">Company</label>
+    <input id="co" name="company" type="text">
+    <label for="pw">Password</label>
+    <input id="pw" name="password" type="password" autocomplete="off" required>
+    <label for="zp">Postal code</label>
+    <input id="zp" name="zip" type="text">
+    <input placeholder="Search customers">
+    <input type="text">
+    <input aria-label="Coupon" aria-invalid="true" value="XYZ">
+    <input aria-label="Referral" placeholder="Enter your referral code">
+    <div class="otp" role="group" aria-label="Verification code">
+      <input maxlength="1" aria-label="Digit 1"><input maxlength="1" aria-label="Digit 2"><input maxlength="1" aria-label="Digit 3">
+      <input maxlength="1" aria-label="Digit 4"><input maxlength="1" aria-label="Digit 5"><input maxlength="1" aria-label="Digit 6">
+    </div>
+    <button type="submit" disabled>Create account</button>
+  </form>
+  <form id="long">
+    <label for="n2">Team handle</label>
+    <input id="n2" required>
+    <div class="tall"></div>
+    <button type="submit" aria-disabled="true">Save team</button>
+  </form>
+</main>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Controls and metrics (rhythm, clean)</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, system-ui, sans-serif; font-size: 16px; line-height: 1.5; background: #fff; color: #18181b; }
+  :focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+  main { padding: 24px; max-width: 720px; margin-inline: auto; }
+  section { margin-bottom: 32px; }
+  h1 { font-size: 28px; line-height: 1.2; margin: 0 0 16px; }
+  h2 { font-size: 18px; margin: 0 0 12px; }
+  .btn { height: 44px; padding: 0 16px; border: 1px solid #a1a1aa; border-radius: 8px; background: #fff; color: #18181b; font: inherit; }
+  .controls { display: flex; gap: 12px; }
+  .seg { display: inline-flex; padding: 4px; border-radius: 12px; background: #e4e4e7; }
+  .seg button { height: 44px; padding: 0 20px; border: 0; border-radius: 8px; background: transparent; color: #3f3f46; font: inherit; }
+  .seg button.is-active { background: #fff; color: #18181b; }
+  .kpi { font-variant-numeric: tabular-nums; display: flex; align-items: baseline; gap: 8px; }
+  .kpi .value { font-variant-numeric: tabular-nums; font-size: 40px; line-height: 1.2; font-weight: 600; }
+  .kpi .unit { font-size: 16px; color: #52525b; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Latency</h1>
+  <section>
+    <h2>Actions</h2>
+    <div class="controls"><button class="btn">Refresh</button><button class="btn">Export</button><button class="btn">Share</button></div>
+  </section>
+  <section>
+    <h2>Range</h2>
+    <div class="seg" role="radiogroup" aria-label="Range">
+      <button role="radio" aria-checked="false">Day</button><button role="radio" aria-checked="true" class="is-active">Week</button><button role="radio" aria-checked="false">Month</button>
+    </div>
+  </section>
+  <section>
+    <h2>Median</h2>
+    <div class="kpi"><span class="value">128</span><span class="unit">ms</span></div>
+  </section>
+</main>
+</body>
+</html>

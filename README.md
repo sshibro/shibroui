@@ -4,7 +4,10 @@ A Claude Code skill of interface foundations at two levels:
 
 - **Screen** (`SU-119`–`SU-136`): layout pattern, grid and alignment, spacing rhythm, a single focal
   point and primary action, hierarchy tiers, type/color/radius budgets, and reviewing every state.
-- **Component** (`SU-1`–`SU-118`): rules distilled from bad-vs-good UI examples, each with the numbers
+- **Behavior and access** (`SU-138`–`SU-202`): semantics and keyboard, form validation, loading/error/
+  success states, theming and dark mode, responsive and touch, microcopy, charts, loading performance, and
+  other languages and directions. Most are measured by the audit.
+- **Component** (`SU-1`–`SU-118`, `SU-137`, `SU-203`): rules distilled from bad-vs-good UI examples, each with the numbers
   that separate the two.
 
 It comes with a checklist, a WCAG contrast tool and two in-page scripts. The **page map** reads a
@@ -51,12 +54,13 @@ skill so Claude never sees answer keys while working.
 |---|---|
 | `shibroui/SKILL.md` | Scope picker, the screen and component workflows, finding format, defaults table, rule map |
 | `shibroui/references/composition.md` | Screen-level rules SU-119–136 and layout patterns (dashboard, settings, list/detail, table, form, landing) with wireframes |
-| `shibroui/references/*.md` | Component rules by area: typography, layout & hierarchy, color, forms, accessibility, motion, surfaces & images, product. Each has bad and good examples with numbers, the reason and the implementation |
+| `shibroui/references/*.md` | Rules by area: typography, layout & hierarchy, color, forms (incl. validation), accessibility, motion, surfaces & images, product, semantics, states, theming, responsive, content, charts, performance, international. Each has bad and good examples with numbers, the reason and how it's measured |
 | `shibroui/references/checklist.md` | Screen-first self-check and review walk-through, with script-covered items marked |
 | `shibroui/scripts/page-map.js` | In-page expression. Returns the wireframe, hierarchy tiers, loud buttons, heading outline, system inventory with budget flags, alignment, rows/rhythm, nesting and hidden states |
 | `shibroui/scripts/audit.js` | In-page expression. Returns findings (fail / warn / info) with rule IDs and **every instance's CSS path**, plus `coverage`: what was checked, what was skipped and why, caps hit, and the hidden states still to audit |
 | `shibroui/scripts/measure-png.py` | Screenshot measurer (Python stdlib) for when there's no DOM. Finds pills, buttons, chips and cards, measures the ink inside them, and reports off-center content (SU-137), item gaps (including "likely a mispositioned highlight") and ink contrast. JPEG-tolerant; `--crop`, `--scale` |
-| `shibroui/scripts/contrast.mjs` | `node contrast.mjs <fg> <bg> [--fix] [--json] [--target 4.5]`: ratio, AA/AAA, and the nearest passing color in the same hue (OKLCH) |
+| `shibroui/scripts/contrast.mjs` | `node contrast.mjs <fg> <bg> [--fix] [--json] [--target 4.5]`: ratio, AA/AAA, and the nearest passing color in the same hue (OKLCH). Accepts hex, rgb, hsl, `oklch()`, `oklab()` and named colors; `--palette tokens.json` checks every declared pair in each scheme |
+| `src/audit/*.js` | Source of `audit.js`, one small file per check group. `npm run build` concatenates them into the single expression the browser tools need; never edit `audit.js` by hand |
 
 ### What the scripts measure
 
@@ -89,12 +93,16 @@ skill so Claude never sees answer keys while working.
 ## Tests
 
 ```sh
-npm test                      # contrast.mjs + measure-png.py unit tests (node:test)
-python3 -m http.server 4399   # then open http://localhost:4399/tests/audit.html
+npm run build                 # rebuild shibroui/scripts/audit.js from src/audit/
+npm test                      # unit tests: contrast.mjs, measure-png.py, build freshness
+npm run test:fixtures         # headless: every fixture in every state, viewport and scheme
+python3 -m http.server 4399   # or open http://localhost:4399/tests/audit.html in a browser
 ```
 
-`tests/audit.html` runs 12 fixture checks in a hidden 1280×900 frame against
-`tests/fixtures/expected.json`. Two broken pages (a settings page and a complex dashboard) must trip
+`npm run test:fixtures` needs Playwright (`npm i -D playwright-core`, or
+`PLAYWRIGHT_CORE=/path/to/playwright-core`). It runs every fixture listed in
+`tests/fixtures/expected.json` and `tests/fixtures/expected/*.json`, at its own viewport (320×640 for
+reflow) and color scheme. `tests/audit.html` runs the original fixtures in a hidden 1280×900 frame. Two broken pages (a settings page and a complex dashboard) must trip
 their planted rules in each opened state. Their clean counterparts must come back with zero fails and
 zero warnings from both scripts.
 

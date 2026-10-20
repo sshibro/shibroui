@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inner scroll panels vs target probe – shibroUI fixture</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 16px/1.5 system-ui, sans-serif; color: #1f2937; background: #fff; }
+  :focus-visible { outline: 2px solid #1d4ed8; outline-offset: -2px; }
+  main { max-width: 640px; margin: 0 auto; padding: 32px 24px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  h1 { font-size: 24px; line-height: 1.2; margin: 0; }
+  h2 { font-size: 18px; line-height: 1.3; margin: 0 0 12px; }
+  .card { border: 1px solid #d1d5db; border-radius: 12px; padding: 24px; }
+  /* Clean: 44px rows in a 240px scroll list. Rows past the fold are clipped until the list is scrolled. */
+  .list { max-height: 240px; overflow: auto; margin: 0; padding: 0; list-style: none; }
+  .list a { display: flex; align-items: center; min-height: 44px; padding: 0 12px; color: #1d4ed8; }
+  /* Planted: 32px chips extend to 44px with ::before, but the scroller has no block padding, so its
+     edges cut the extension off however far it is scrolled. */
+  .chips { display: flex; gap: 12px; overflow-x: auto; }
+  .chip { position: relative; display: inline-flex; align-items: center; flex: none; width: 120px; height: 32px; padding: 0 12px; border: 1px solid #6b7280; border-radius: 16px; color: #1f2937; text-decoration: none; }
+  .chip::before { content: ""; position: absolute; inset: -7px; }
+  .spacer { height: 600px; }
+</style>
+</head>
+<body>
+<main id="main">
+  <h1>Library</h1>
+  <section id="panel" class="card" aria-labelledby="files-title">
+    <h2 id="files-title">Recent files</h2>
+    <ul class="list">
+      <li><a href="#f1">January report</a></li>
+      <li><a href="#f2">February report</a></li>
+      <li><a href="#f3">March report</a></li>
+      <li><a href="#f4">April report</a></li>
+      <li><a href="#f5">May report</a></li>
+      <li><a href="#f6">June report</a></li>
+      <li><a href="#f7">July report</a></li>
+      <li><a href="#f8">August report</a></li>
+      <li><a href="#f9">September report</a></li>
+      <li><a href="#f10">October report</a></li>
+      <li><a href="#f11">November report</a></li>
+      <li><a href="#f12">December report</a></li>
+    </ul>
+  </section>
+  <div class="spacer"></div>
+  <section id="chips" class="card" aria-labelledby="tags-title">
+    <h2 id="tags-title">Tags</h2>
+    <div class="chips">
+      <a class="chip" href="#t1">Design</a>
+      <a class="chip" href="#t2">Research</a>
+      <a class="chip" href="#t3">Finance</a>
+      <a class="chip" href="#t4">Legal</a>
+      <a class="chip" href="#t5">Hiring</a>
+      <a class="chip" href="#t6">Support</a>
+      <a class="chip" href="#t7">Security</a>
+    </div>
+  </section>
+</main>
+</body>
+</html>

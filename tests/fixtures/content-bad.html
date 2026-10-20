@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Projects (content bad)</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, system-ui, sans-serif; font-size: 16px; line-height: 1.5; color: #18181b; background: #fff; }
+  main { padding: 24px; max-width: 640px; }
+  button, input { height: 44px; padding: 0 16px; font: inherit; }
+  input { display: block; width: 100%; margin: 8px 0 16px; border: 1px solid #52525b; border-radius: 8px; }
+  .alert-error { padding: 12px 16px; background: #fee2e2; color: #7f1d1d; border-radius: 8px; margin-bottom: 16px; }
+  .toast { position: fixed; right: 16px; bottom: 16px; padding: 12px 16px; background: #7f1d1d; color: #fff; border-radius: 8px; }
+  .dlg { max-width: 420px; padding: 24px; border: 1px solid #52525b; border-radius: 12px; box-shadow: 0 8px 24px rgb(0 0 0 / .2); margin: 16px 0; }
+  .field-note { color: #52525b; font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Projects</h1>
+  <h2>Create New Project Settings</h2>
+  <button type="button">Invite Team Members</button>
+  <button type="submit">Submit</button>
+  <div class="alert-error">We hit a problem while loading your invoices.</div>
+  <p role="alert">Something went wrong</p>
+  <p class="field-note" id="code-note">ERR_4012</p>
+  <label for="mail">Email</label>
+  <input id="mail" type="email" autocomplete="email" placeholder="Enter your email" aria-describedby="code-note">
+  <p>Assigned to John Doe. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+  <div class="dlg" role="dialog" aria-labelledby="dlg-title">
+    <h2 id="dlg-title">Are you sure?</h2>
+    <p>This will remove the project.</p>
+    <button type="button">OK</button>
+    <button type="button">No</button>
+  </div>
+</main>
+<div class="toast">Upload failed: the file is too large</div>
+</body>
+</html>

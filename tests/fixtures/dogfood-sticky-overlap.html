@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sticky header vs target overlap – shibroUI fixture</title>
+<style>
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: 96px; }
+  body { margin: 0; font: 16px/1.5 system-ui, sans-serif; color: #1f2937; background: #fff; }
+  :focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+  .bar { position: sticky; top: 0; z-index: 10; height: 80px; display: flex; align-items: center; gap: 16px; padding: 0 24px; background: #fff; border-bottom: 1px solid #d1d5db; }
+  .bar strong { font-size: 16px; }
+  .btn { height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid #6b7280; background: #fff; color: #1f2937; font: inherit; }
+  .bar .btn { margin-left: auto; }
+  main { display: flex; flex-direction: column; padding: 32px 24px; }
+  h1 { font-size: 24px; line-height: 1.2; margin: 0 0 16px; }
+  p { margin: 0; }
+  .menu { align-self: flex-end; width: 320px; }
+  .item { display: flex; align-items: center; min-height: 44px; padding: 0 12px; border: 1px solid #6b7280; border-radius: 8px; color: #1d4ed8; }
+  /* DOM order: menu, "Load more" (far down), "Save view". Visual order: menu, "Save view", "Load more".
+     "Save view" is the last target checked; once it is centred below the 96px scroll padding (top at 476px
+     of a 900px viewport) the menu item sits at 18px, under the sticky bar's "Search" button: a scroll
+     position, not a real overlap. */
+  .menu { order: 1; }
+  .save { order: 2; align-self: flex-start; margin-top: 414px; }
+  .more { order: 3; align-self: flex-start; margin-top: 1500px; }
+</style>
+</head>
+<body>
+<header class="bar">
+  <strong>Acme</strong>
+  <button type="button" class="btn">Search</button>
+</header>
+<main id="main">
+  <h1>Settings</h1>
+  <p>A bordered menu item and two buttons, none of them overlapping in the page.</p>
+  <nav class="menu" aria-label="Settings"><a class="item" href="#billing">Billing settings</a></nav>
+  <button type="button" class="btn more">Load more</button>
+  <button type="button" class="btn save">Save view</button>
+</main>
+</body>
+</html>

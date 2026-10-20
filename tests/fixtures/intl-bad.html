@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Localized settings (international problems)</title>
+<style>
+  /* Planted: physical properties on a page with an RTL region, letter-spacing on Arabic text,
+     a truncated button label and error, truncated cells with no way to read them. */
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, system-ui, sans-serif; font-size: 16px; line-height: 1.5; background: #fff; color: #18181b; }
+  :focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+  main { padding: 24px; max-width: 720px; margin-inline: auto; }
+  section { margin-bottom: 24px; }
+  h1 { font-size: 28px; line-height: 1.2; margin: 0 0 16px; }
+  h2 { font-size: 20px; margin: 0 0 8px; }
+  .arabic { margin-left: 16px; padding-right: 12px; border-left: 3px solid #c7d2fe; text-align: left; }
+  .arabic p { letter-spacing: 0.1em; margin: 0 0 16px; }
+  .btn { display: block; width: 140px; height: 44px; padding: 0 16px; border: 1px solid #a1a1aa; border-radius: 8px; background: #fff; color: #18181b; font: inherit; }
+  .btn.cut { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 16px; }
+  .cell { width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 8px; }
+  .preview { width: 260px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin: 0 0 16px; }
+  .error { width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #991b1b; margin: 0 0 16px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Settings</h1>
+  <section class="arabic" lang="ar" dir="rtl">
+    <h2>الإعدادات</h2>
+    <p>اختر اللغة المفضلة لديك من القائمة التالية.</p>
+  </section>
+  <section lang="de">
+    <h2>Konto</h2>
+    <button class="btn cut" type="button">Benutzereinstellungen speichern</button>
+    <p class="error" role="alert">Die Zahlung konnte nicht verarbeitet werden</p>
+    <div class="cell">Donaudampfschifffahrtsgesellschaftskapitän</div>
+    <p class="preview">Willkommen in Ihrem Konto. Hier verwalten Sie Ihre persönlichen Daten, Zahlungsmethoden, Benachrichtigungen und alle weiteren Einstellungen für Ihren Zugang.</p>
+  </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Motion (bad)</title>
+<style>
+  /* planted: a 400ms menu, a 600ms drawer, ease-in on hover/expanded/token easing */
+  :root { --ink: #18181b; --surface: #ffffff; --page: #f4f4f5; --border: #d4d4d8; --focus: #2563eb; --ease-in: cubic-bezier(.42, 0, 1, 1); }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, system-ui, sans-serif; font-size: 16px; line-height: 1.5; background: var(--page); color: var(--ink); }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  main { padding: 32px 24px; }
+  h1 { font-size: 28px; line-height: 1.2; margin: 0 0 16px; }
+  .btn { height: 44px; padding: 0 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; margin-right: 12px; }
+  .menu { opacity: 1; transition: opacity 400ms ease-out; }
+  .drawer { transform: translateX(0); transition: transform 600ms cubic-bezier(.22, 1, .36, 1); }
+  .btn:hover { background: #e4e4e7; transition: background 200ms ease-in; }
+  .tile:hover { transform: translateY(-2px); transition: transform 200ms cubic-bezier(.5, 0, 1, 1); }
+  .link:hover { color: #1d4ed8; transition: color 200ms var(--ease-in); }
+  .disclosure[aria-expanded="true"] { background: #e4e4e7; transition: background 200ms ease-in; }
+  @media (prefers-reduced-motion: reduce) { .menu, .drawer, .btn, .tile, .link, .disclosure { transition: none; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Motion</h1>
+  <button class="btn">Hover me</button>
+  <button class="btn disclosure" aria-expanded="false">Details</button>
+</main>
+</body>
+</html>

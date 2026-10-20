@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sticky header vs target probe – shibroUI fixture</title>
+<style>
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: 96px; }
+  body { margin: 0; font: 16px/1.5 system-ui, sans-serif; color: #1f2937; background: #fff; }
+  :focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+  .bar { position: sticky; top: 0; z-index: 10; height: 80px; display: flex; align-items: center; gap: 16px; padding: 0 24px; background: #fff; border-bottom: 1px solid #d1d5db; }
+  .bar strong { font-size: 16px; }
+  .bar a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px; color: #1d4ed8; }
+  main { max-width: 1040px; margin: 0 auto; padding: 32px 24px; }
+  h1 { font-size: 24px; line-height: 1.2; margin: 0 0 16px; }
+  p { margin: 0; }
+  .columns { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+  .btn { display: block; height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid #6b7280; background: #fff; color: #1f2937; font: inherit; }
+  /* "Download CSV" comes first in the DOM. Once it is centred in the scrollport below the 96px scroll
+     padding (top at 476px of a 900px viewport), "Open report" sits 60px down the viewport: inside it,
+     but under the 80px sticky bar, so its probe's top points land on the bar. */
+  .far { margin-top: 1800px; }
+  .near { margin-top: 1384px; }
+  footer { margin-top: 1200px; padding: 24px; border-top: 1px solid #d1d5db; }
+</style>
+</head>
+<body>
+<header class="bar">
+  <strong>Acme</strong>
+  <nav aria-label="Primary"><a href="#reports">Reports</a></nav>
+</header>
+<main id="main">
+  <h1>Reports</h1>
+  <p>Two full-size buttons far down the page. Neither is too small.</p>
+  <div class="columns">
+    <div><button type="button" class="btn far">Download CSV</button></div>
+    <div><button type="button" class="btn near">Open report</button></div>
+  </div>
+</main>
+<footer><p>Acme reporting</p></footer>
+</body>
+</html>

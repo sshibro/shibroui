@@ -1,0 +1,73 @@
+{
+  "fixtures": [
+    {
+      "name": "semantics: planted issues",
+      "url": "fixtures/semantics-bad.html",
+      "script": "audit.js",
+      "mustFail": ["SU-138", "SU-139", "SU-140", "SU-141", "SU-142", "SU-145", "SU-147"],
+      "mustFlag": ["SU-146"]
+    },
+    {
+      "name": "semantics: scoped audit skips the main landmark count",
+      "url": "fixtures/semantics-bad.html",
+      "script": "audit.js",
+      "setup": "window.__shibroAudit = { root: 'header' }",
+      "mustNotFlag": ["SU-138"]
+    },
+    {
+      "name": "semantics: clean page",
+      "url": "fixtures/semantics-good.html",
+      "script": "audit.js",
+      "mustNotFlag": ["SU-138", "SU-139", "SU-140", "SU-141", "SU-142", "SU-145", "SU-146", "SU-147"],
+      "maxFails": 0,
+      "maxWarns": 0
+    },
+    {
+      "name": "semantics: generic page title",
+      "url": "fixtures/semantics-good.html",
+      "script": "audit.js",
+      "setup": "document.title = 'Untitled'",
+      "mustFlag": ["SU-139"],
+      "maxFails": 0
+    },
+    {
+      "name": "forms: planted issues",
+      "url": "fixtures/forms-bad.html",
+      "script": "audit.js",
+      "viewport": { "width": 1280, "height": 700 },
+      "mustFail": ["SU-45", "SU-148", "SU-151", "SU-153"],
+      "mustFlag": ["SU-149", "SU-150", "SU-183"]
+    },
+    {
+      "name": "forms: clean form",
+      "url": "fixtures/forms-good.html",
+      "script": "audit.js",
+      "mustNotFlag": ["SU-45", "SU-148", "SU-149", "SU-150", "SU-151", "SU-153", "SU-183"],
+      "maxFails": 0,
+      "maxWarns": 0
+    },
+    {
+      "name": "content: planted issues",
+      "url": "fixtures/content-bad.html",
+      "script": "audit.js",
+      "mustFlag": ["SU-146", "SU-160", "SU-178", "SU-179", "SU-180", "SU-181", "SU-183", "SU-184"]
+    },
+    {
+      "name": "content: clean page",
+      "url": "fixtures/content-good.html",
+      "script": "audit.js",
+      "mustNotFlag": ["SU-146", "SU-160", "SU-178", "SU-179", "SU-180", "SU-181", "SU-183", "SU-184"],
+      "maxFails": 0,
+      "maxWarns": 0
+    },
+    {
+      "name": "content: clean page, delete dialog open",
+      "url": "fixtures/content-good.html",
+      "script": "audit.js",
+      "open": "#open-delete",
+      "mustNotFlag": ["SU-178", "SU-181"],
+      "maxFails": 0,
+      "maxWarns": 0
+    }
+  ]
+}

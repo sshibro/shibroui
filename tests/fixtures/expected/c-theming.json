@@ -1,0 +1,94 @@
+{
+  "fixtures": [
+    {
+      "name": "theming bad (dark): pure black base, flat elevation, no color-scheme, shadow-only focus, glass",
+      "url": "fixtures/theming-bad.html",
+      "script": "audit.js",
+      "colorScheme": "dark",
+      "mustFlag": [
+        "SU-164",
+        "SU-166",
+        "SU-168",
+        "SU-169"
+      ],
+      "mustNotFlag": [
+        "SU-189",
+        "SU-188",
+        "SU-187"
+      ],
+      "maxFails": 6
+    },
+    {
+      "name": "theming bad (light run): no color-scheme and shadow-only focus still flagged, dark base rules not applied",
+      "url": "fixtures/theming-bad.html",
+      "script": "audit.js",
+      "colorScheme": "light",
+      "mustFlag": [
+        "SU-166",
+        "SU-168"
+      ],
+      "mustNotFlag": [
+        "SU-164"
+      ],
+      "maxFails": 6
+    },
+    {
+      "name": "theming good (light)",
+      "url": "fixtures/theming-good.html",
+      "script": "audit.js",
+      "colorScheme": "light",
+      "maxFails": 0,
+      "maxWarns": 0
+    },
+    {
+      "name": "theming good (dark)",
+      "url": "fixtures/theming-good.html",
+      "script": "audit.js",
+      "colorScheme": "dark",
+      "mustNotFlag": [
+        "SU-164",
+        "SU-166",
+        "SU-168"
+      ],
+      "maxFails": 0,
+      "maxWarns": 0
+    },
+    {
+      "name": "chart bad: unnamed svg and canvas, no table, 10px low-contrast text, 1.8:1 series",
+      "url": "fixtures/chart-bad.html",
+      "script": "audit.js",
+      "mustFail": [
+        "SU-189",
+        "SU-188"
+      ],
+      "mustFlag": [
+        "SU-187"
+      ],
+      "maxFails": 8
+    },
+    {
+      "name": "chart good: named svg charts, tables, 12px text, 3:1+ series, named canvas",
+      "url": "fixtures/chart-good.html",
+      "script": "audit.js",
+      "maxFails": 0,
+      "maxWarns": 0
+    },
+    {
+      "name": "motion bad: 400ms menu, 600ms drawer, ease-in on hover, expanded and token easing",
+      "url": "fixtures/motion-bad.html",
+      "script": "audit.js",
+      "mustFlag": [
+        "SU-85",
+        "SU-82"
+      ],
+      "maxFails": 0
+    },
+    {
+      "name": "motion good: 300ms routine, 450-500ms panels, ease-out and ease-in-out interactions",
+      "url": "fixtures/motion-good.html",
+      "script": "audit.js",
+      "maxFails": 0,
+      "maxWarns": 0
+    }
+  ]
+}

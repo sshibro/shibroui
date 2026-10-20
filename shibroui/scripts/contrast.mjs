@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 // shibroUI contrast helper: WCAG 2 contrast ratios, AA/AAA ratings and the nearest passing color.
 // Usage: node contrast.mjs <fg> <bg> [<fg> <bg> ...] [--target 4.5] [--fix] [--json]
+//        node contrast.mjs --palette tokens.json [--json]   (declared token pairs per color scheme)
+// Colors: #hex, rgb(), hsl(), oklch(), oklab() and the CSS named colors.
 import { fileURLToPath } from 'node:url';
+import { NAMED_COLORS } from './contrast-named.mjs';
 
 const AA_NORMAL = 4.5;
 const AAA_NORMAL = 7;
@@ -10,7 +13,10 @@ const AAA_LARGE = 4.5;
 const NON_TEXT = 3;
 const LIGHTNESS_STEP = 0.002;
 const CHROMA_SEARCH_STEPS = 20;
-const NAMED = { white: '#ffffff', black: '#000000', transparent: '#00000000' };
+const OKLAB_AXIS_RANGE = 0.4;
+const OKLCH_CHROMA_RANGE = 0.4;
+const FULL_TURN_DEGREES = 360;
+const HUE_UNITS = { deg: 1, grad: 0.9, rad: 180 / Math.PI, turn: FULL_TURN_DEGREES };
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
@@ -40,14 +46,44 @@ function hslToRgb(hue, saturation, lightness) {
   return { r: Math.round(channel(0) * 255), g: Math.round(channel(8) * 255), b: Math.round(channel(4) * 255) };
 }
 
+// "none" is a missing component and reads as 0; "50%" scales against the function's reference range.
+function parseComponent(token, percentRange = 1) {
+  if (token === undefined || token === 'none') return 0;
+  return token.endsWith('%') ? (parseFloat(token) / 100) * percentRange : parseFloat(token);
+}
+
+function parseHue(token) {
+  if (token === undefined || token === 'none') return 0;
+  const unit = Object.keys(HUE_UNITS).find((name) => token.endsWith(name));
+  return parseFloat(token) * (unit ? HUE_UNITS[unit] : 1);
+}
+
+function parseOklab(parts) {
+  const [a, b] = [parseComponent(parts[1], OKLAB_AXIS_RANGE), parseComponent(parts[2], OKLAB_AXIS_RANGE)];
+  return { L: parseComponent(parts[0]), C: Math.hypot(a, b), h: Math.atan2(b, a) };
+}
+
+function parseOklchFunction(parts) {
+  return {
+    L: parseComponent(parts[0]),
+    C: Math.max(0, parseComponent(parts[1], OKLCH_CHROMA_RANGE)),
+    h: (parseHue(parts[2]) * Math.PI) / 180,
+  };
+}
+
 export function parseColor(input) {
   const value = String(input).trim().toLowerCase();
-  if (NAMED[value]) return parseHex(NAMED[value]);
+  if (Object.hasOwn(NAMED_COLORS, value)) return parseHex(NAMED_COLORS[value]);
   if (value.startsWith('#')) return parseHex(value);
-  const match = value.match(/^(rgba?|hsla?)\((.*)\)$/);
+  const match = value.match(/^(rgba?|hsla?|oklch|oklab)\((.*)\)$/);
   if (!match) throw new Error(`Unknown color: ${input}`);
   const [name, inner] = [match[1], match[2]];
   const parts = splitArgs(inner);
+  if (name === 'oklch' || name === 'oklab') {
+    const lch = name === 'oklab' ? parseOklab(parts) : parseOklchFunction(parts);
+    const alpha = parts[3] === 'none' ? 0 : parseAlpha(parts[3]);
+    return { ...oklchToRgb({ ...lch, L: clamp(lch.L, 0, 1) }), a: alpha };
+  }
   if (name.startsWith('rgb')) {
     const toByte = (token) => (token.endsWith('%') ? parseFloat(token) * 2.55 : parseFloat(token));
     const [r, g, b] = parts.slice(0, 3).map((token) => Math.round(clamp(toByte(token), 0, 255)));
@@ -99,7 +135,7 @@ export function toHex(color) {
 }
 
 // OKLab/OKLCH conversions keep hue stable while lightness changes.
-function rgbToOklch({ r, g, b }) {
+export function rgbToOklch({ r, g, b }) {
   const [lr, lg, lb] = [r, g, b].map(toLinear);
   const l = Math.cbrt(0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb);
   const m = Math.cbrt(0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb);
@@ -129,7 +165,7 @@ const toByte = (linear) => {
   return Math.round(encoded * 255);
 };
 
-function oklchToRgb(lch) {
+export function oklchToRgb(lch) {
   let channels = oklchToLinearRgb(lch);
   if (!inGamut(channels)) {
     let [low, high] = [0, lch.C];
@@ -186,10 +222,14 @@ function parseArgs(argv) {
   const colors = [];
   const flags = new Set();
   let target = AA_NORMAL;
+  let palette = null;
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     if (arg === '--target') {
       target = parseFloat(argv[index + 1]);
+      index += 1;
+    } else if (arg === '--palette') {
+      palette = argv[index + 1];
       index += 1;
     } else if (arg.startsWith('--')) {
       flags.add(arg);
@@ -197,11 +237,22 @@ function parseArgs(argv) {
       colors.push(arg);
     }
   }
-  return { colors, flags, target };
+  return { colors, flags, target, palette };
 }
 
-function main(argv) {
-  const { colors, flags, target } = parseArgs(argv);
+async function runPalette(file, asJson) {
+  const { readPalette, evaluatePalette, formatPalette } = await import('./contrast-palette.mjs');
+  const report = evaluatePalette(readPalette(file));
+  process.stdout.write(`${asJson ? JSON.stringify(report, null, 2) : formatPalette(report)}\n`);
+  process.exitCode = report.ok ? 0 : 1;
+}
+
+async function main(argv) {
+  const { colors, flags, target, palette } = parseArgs(argv);
+  if (palette) {
+    await runPalette(palette, flags.has('--json'));
+    return;
+  }
   if (colors.length < 2 || colors.length % 2 !== 0) {
     console.error('Usage: node contrast.mjs <fg> <bg> [<fg> <bg> ...] [--target 4.5] [--fix] [--json]');
     process.exit(2);
@@ -212,4 +263,9 @@ function main(argv) {
   process.stdout.write(`${output}\n`);
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) main(process.argv.slice(2));
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  main(process.argv.slice(2)).catch((error) => {
+    console.error(error.message);
+    process.exit(2);
+  });
+}

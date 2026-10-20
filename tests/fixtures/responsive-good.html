@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trip planner (responsive, clean)</title>
+<style>
+  html { scroll-padding-bottom: 72px; }
+  :root { --ink: #18181b; --muted: #52525b; --surface: #ffffff; --page: #f4f4f5; --border: #a1a1aa; --accent: #2563eb; --focus: #2563eb; --control-h: 44px; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, system-ui, sans-serif; font-size: 1rem; line-height: 1.5; background: var(--page); color: var(--ink); }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .top { background: var(--surface); border-bottom: 1px solid #e4e4e7; padding: 0 16px; }
+  .top a { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink); text-decoration: none; font-weight: 600; }
+  main { padding: 24px 16px 96px; max-width: 720px; margin-inline: auto; }
+  h1 { font-size: clamp(1.5rem, 1.1rem + 2vw, 2rem); line-height: 1.2; margin: 0 0 8px; text-wrap: balance; }
+  h2 { font-size: 1.125rem; margin: 0 0 16px; }
+  .lead { color: var(--muted); margin: 0 0 16px; }
+  .cover { display: block; max-width: 100%; height: auto; border-radius: 12px; margin-bottom: 24px; }
+  .card { background: var(--surface); border-radius: 12px; padding: 16px; margin-bottom: 24px; }
+  .field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; max-width: 380px; }
+  .field input { height: var(--control-h); padding: 0 12px; font: inherit; background: #fafafa; border: 1px solid var(--border); border-radius: 8px; color: var(--ink); }
+  .btn { height: var(--control-h); padding: 0 16px; border: 1px solid transparent; border-radius: 8px; background: var(--accent); color: #fff; font: inherit; cursor: pointer; }
+  .btn-secondary { background: var(--surface); color: var(--ink); border-color: var(--border); }
+  .scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; min-width: 480px; font-variant-numeric: tabular-nums; }
+  caption { text-align: start; color: var(--muted); font-size: 0.875rem; padding-bottom: 8px; }
+  th, td { text-align: left; padding: 8px; border-bottom: 1px solid #e4e4e7; }
+  .num { text-align: right; }
+  .files { list-style: none; margin: 0; padding: 0; }
+  .row { display: flex; align-items: center; justify-content: space-between; min-height: 56px; }
+  .actions { display: flex; gap: 8px; opacity: 0; transition: opacity 150ms ease-out; }
+  .row:hover .actions, .row:focus-within .actions { opacity: 1; }
+  @media (hover: none) { .actions { opacity: 1; } }
+  .bottom { position: fixed; inset: auto 0 0 0; display: flex; background: var(--surface); border-top: 1px solid #d4d4d8; }
+  .bottom a { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 56px; color: var(--ink); text-decoration: none; font-size: 0.875rem; }
+  @media (prefers-reduced-motion: reduce) { .actions { transition: none; } }
+</style>
+</head>
+<body>
+<header class="top"><a href="/">Northwind</a></header>
+<main>
+  <h1>Plan your trip</h1>
+  <p class="lead">Pick dates, add stops and share the plan.</p>
+  <img class="cover" alt="Map of the route from Lisbon to Porto" width="640" height="320" src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='320'%3E%3Crect width='640' height='320' fill='%23c7d2fe'/%3E%3C/svg%3E">
+  <section class="card">
+    <h2>Trip details</h2>
+    <div class="field"><label for="dest">Destination</label><input id="dest" autocomplete="off"></div>
+    <div class="field"><label for="email">Contact email</label><input id="email" type="email" inputmode="email" autocomplete="email"></div>
+    <button class="btn" type="submit">Save trip</button>
+  </section>
+  <section class="card">
+    <h2>Fares</h2>
+    <div class="scroll" role="region" aria-label="Fare table" tabindex="0">
+      <table>
+        <caption>Fares by cabin</caption>
+        <thead><tr><th scope="col">Cabin</th><th scope="col" class="num">Seats</th><th scope="col" class="num">Price (USD)</th></tr></thead>
+        <tbody>
+          <tr><td>Economy</td><td class="num">120</td><td class="num">1,264.50</td></tr>
+          <tr><td>Premium</td><td class="num">40</td><td class="num">325.00</td></tr>
+          <tr><td>Business</td><td class="num">12</td><td class="num">17.25</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="card">
+    <h2>Files</h2>
+    <ul class="files">
+      <li class="row"><span>Quarterly report</span><span class="actions"><button class="btn btn-secondary">Rename</button><button class="btn btn-secondary">Delete</button></span></li>
+    </ul>
+  </section>
+</main>
+<nav class="bottom" aria-label="Primary">
+  <a href="/">Home</a><a href="/trips">Trips</a><a href="/saved">Saved</a><a href="/account">Account</a>
+</nav>
+</body>
+</html>

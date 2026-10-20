@@ -44,6 +44,7 @@ numbers that separate them, why, and how to implement it.
 - **Why:** the eye follows the baseline, so sharing it ties different sizes together without
   manual nudges.
 - **Do:** put both text elements in the same flex context: `.price { display:flex; align-items:baseline; gap:4px }`.
+- **Measure:** `audit.js` SU-4 flags flex rows whose mixed-size text baselines differ by more than 2px.
 
 ### SU-5 Line height
 **Rule:** match leading to the font, size and line length.

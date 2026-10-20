@@ -51,10 +51,13 @@
 - Improve existing elements before adding new decoration. Keep `<ul>/<li>` semantics and mark the icons
   `aria-hidden`.
 
-### SU-115 Accent borders
+### SU-115 Accent surfaces, not stripes
 - ❌ A full blue fill for a simple notice.
-- ✅ A `4px` blue edge on one side, with a quiet surface.
-- Keep the text and icon so the border isn't the only signal.
+- ❌ A `4px` colored stripe down one side of a rounded card. Other installed skills ban it as a generated-UI
+  tell (impeccable's `side-tab` rule), so the two would give conflicting advice.
+- ✅ A quiet tinted surface (the accent at low chroma) with an icon, the text and one action link.
+- Keep the text and icon so color isn't the only signal. A square-cornered quote or callout in long-form
+  prose can keep a left rule.
 
 ### SU-116 Quiet backgrounds
 - ❌ A dot pattern at `35%` opacity competing with the words.

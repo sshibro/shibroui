@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Localized settings (international, clean)</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, system-ui, sans-serif; font-size: 16px; line-height: 1.5; background: #fff; color: #18181b; }
+  :focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+  main { padding: 24px; max-width: 720px; margin-inline: auto; }
+  section { margin-bottom: 24px; }
+  h1 { font-size: 28px; line-height: 1.2; margin: 0 0 16px; }
+  h2 { font-size: 20px; margin: 0 0 8px; }
+  .arabic { margin-inline-start: 16px; padding-inline-end: 12px; border-inline-start: 3px solid #c7d2fe; text-align: start; }
+  .arabic p { margin: 0 0 16px; }
+  .btn { display: block; min-width: 140px; min-height: 44px; padding: 8px 16px; border: 1px solid #a1a1aa; border-radius: 8px; background: #fff; color: #18181b; font: inherit; margin-bottom: 16px; }
+  .cell { width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 8px; }
+  .preview { max-width: 65ch; margin: 0 0 16px; }
+  .error { color: #991b1b; margin: 0 0 16px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Settings</h1>
+  <section class="arabic" lang="ar" dir="rtl">
+    <h2>الإعدادات</h2>
+    <p>اختر اللغة المفضلة لديك من القائمة التالية.</p>
+  </section>
+  <section lang="de">
+    <h2>Konto</h2>
+    <button class="btn" type="button">Benutzereinstellungen speichern</button>
+    <div role="alert">
+      <p class="error">Die Zahlung konnte nicht verarbeitet werden. Prüfen Sie die Kartendaten und versuchen Sie es erneut.</p>
+      <button class="btn" type="button">Erneut versuchen</button>
+    </div>
+    <div class="cell" title="Donaudampfschifffahrtsgesellschaftskapitän">Donaudampfschifffahrtsgesellschaftskapitän</div>
+    <p class="preview">Willkommen in Ihrem Konto. Hier verwalten Sie Ihre persönlichen Daten und Zahlungsmethoden.</p>
+  </section>
+</main>
+</body>
+</html>

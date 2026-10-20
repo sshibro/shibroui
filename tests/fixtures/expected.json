@@ -44,7 +44,6 @@
       "url": "../evals/files/dashboard.html",
       "script": "audit.js",
       "mustFail": [
-        "SU-6",
         "SU-9",
         "SU-17",
         "SU-44",
@@ -70,6 +69,16 @@
         "SU-85"
       ],
       "minHiddenStates": 3,
+      "maxFails": 60
+    },
+    {
+      "name": "complex dashboard, methodology open",
+      "url": "../evals/files/dashboard.html",
+      "script": "audit.js",
+      "open": "details.card summary",
+      "mustFail": [
+        "SU-6"
+      ],
       "maxFails": 60
     },
     {

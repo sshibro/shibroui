@@ -1,7 +1,8 @@
-# Forms & controls (SU-50 – SU-60)
+# Forms & controls (SU-50 – SU-60, SU-148 – SU-154)
 
 - [Forms & selection](#forms--selection) SU-50–57
 - [Control alignment](#control-alignment) SU-58–60
+- [Validation and feedback](#validation-and-feedback) SU-148–154
 
 ## Forms & selection
 
@@ -82,3 +83,71 @@ one height.**
 - ✅ All `40px`, regardless of variant.
 - **Do:** a shared control-height token (`--control-h: 40px`) used by inputs, selects and buttons. Icon
   buttons are square at that height.
+
+## Validation and feedback
+
+Sources disagree on timing: GOV.UK validates on submit only, while NN/g and Carbon validate when a field
+loses focus. shibroUI uses blur-after-touch plus submit, and never validates on every keystroke.
+
+### SU-148 Every field has a visible, persistent label
+**Rule:** a label sits above each field. Hints and format examples sit between the label and the field,
+linked with `aria-describedby`. The placeholder holds an example at most, never the label.
+- ❌ A field whose only label is the placeholder "Email": it disappears once someone types.
+- ✅ "Email" above, the hint "We'll send receipts here." under it, then the field.
+- **Why:** WCAG 3.3.2 and 1.3.1. People check what they typed against the label.
+- **Measure:** `audit.js` SU-148: fail on a text field named only by its placeholder, or not named at
+  all. Placeholder contrast counts as text (SU-45).
+
+### SU-149 Mark the exception
+**Rule:** when most fields are required, mark the optional ones "(optional)". Otherwise mark the
+required ones with text, or an asterisk explained once. Use `required` in code either way. The marker is
+text at ≥ 4.5:1.
+- **Measure:** `audit.js` SU-149: warn on a form that mixes required and optional fields with no visible
+  marker in any label.
+
+### SU-150 Validate when the person is done, and keep submit enabled
+**Rule:** validate a field on blur once it's been touched, and always on submit. On input, re-validate
+only to *clear* an error. Never show errors on untouched fields or while someone is still typing. Style
+errors with `:user-invalid` or `[aria-invalid="true"]`, never bare `:invalid`. Don't disable the submit
+button to signal invalid input. Let it submit, then explain.
+- ❌ "Invalid email" after two keystrokes, and a gray "Create account" that does nothing.
+- ✅ A neutral field while typing, an error after blur, and an enabled button that reports problems
+  when pressed.
+- **Why:** early errors read as scolding, and a disabled button explains nothing (and fails contrast).
+  Carbon allows a disabled submit on short forms; GOV.UK avoids it everywhere.
+- **Measure:** `audit.js` SU-150: warn on CSS that styles `:invalid`. A disabled submit at rest with
+  empty required fields is a warn on forms taller than the screen and info on short ones.
+
+### SU-151 Inline errors are text, next to the field, and linked
+**Rule:** the message sits between the label and the field, or directly under the field. It uses an
+icon plus text in the danger color (≥ 4.5:1). The field gets a 2px danger border (≥ 3:1),
+`aria-invalid="true"` and `aria-describedby` pointing at the message. The message says what's wrong and
+how to fix it (SU-180).
+- ❌ A red border and an "Invalid input" toast.
+- ✅ "Enter an email address like name@company.com" under the label, linked to the field.
+- **Why:** WCAG 3.3.1 and 3.3.3. Color alone and disappearing toasts both fail.
+- **Measure:** `audit.js` SU-151: fail on `aria-invalid="true"` without a linked, visible message.
+
+### SU-152 An error summary on submit
+**Rule:** on a multi-field form, any error on submit shows a summary above the form ("There is a
+problem", or Polaris-style "To save this product, make 2 changes"). It lists each error as a link to its
+field, in the same words as the inline message. Focus moves to it, and the page title gets an "Error: "
+prefix. A single-field form just focuses the field.
+- **Measure:** submit the form empty and check where focus lands (SU-144).
+
+### SU-153 Help the browser help the person
+**Rule:** use the right `type`, `inputmode` and `autocomplete` token (`email`, `tel`, `given-name`,
+`postal-code`, `current-password`, `new-password`, `one-time-code`). Never block paste or password
+managers. Split code boxes accept a pasted code. Use `inputmode="numeric"` rather than `type="number"`,
+and `spellcheck="false"` on names, emails and codes.
+- **Why:** WCAG 1.3.5 (input purpose) and 3.3.8 (accessible authentication).
+- **Measure:** `audit.js` SU-153: warn on personal-data fields without a valid `autocomplete` token;
+  fail on `type=password` with `autocomplete="off"`; warn on 4–8 single-character boxes.
+
+### SU-154 Keep what people typed, and don't ask twice
+**Rule:**
+- An error never clears valid fields.
+- Multi-step forms show progress (step *n* of *m*) and prefill earlier answers ("Same as shipping
+  address").
+- High-stakes submits (payment, legal, deletion) get a review step or Undo (WCAG 3.3.4, 3.3.7).
+- **Measure:** manual.

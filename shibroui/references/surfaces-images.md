@@ -35,7 +35,11 @@ soft, broad shadow with a tight edge shadow.
 | 4 | Drawers, sheets | `0 2px 4px rgb(0 0 0 / .08), 0 16px 32px rgb(0 0 0 / .14)` |
 | 5 | Toasts, notifications, modals | `0 2px 6px rgb(0 0 0 / .10), 0 24px 48px rgb(0 0 0 / .18)` |
 
-On dark themes, shadows read weakly, so pair elevation with a slightly lighter surface for each level.
+On dark themes, shadows read weakly, so pair elevation with a slightly lighter surface for each level. See SU-164.
+
+**Stacking order** follows the same levels: base `0` · sticky `100` · dropdown `200` · scrim `300` · modal `400` ·
+toast `500` · tooltip `600`. Keep these as tokens and never reach for `9999`. Overlays in the top layer
+(`<dialog>` with `showModal()`, `popover`) need no `z-index` at all.
 
 ### SU-99 Base surface
 - ❌ Resting cards at level 4: heavy shadows make everything compete.
@@ -44,6 +48,9 @@ On dark themes, shadows read weakly, so pair elevation with a slightly lighter s
 ### SU-100 Dropdown layer
 - ❌ A level 0 menu that looks like part of the page.
 - ✅ Level 2.
+- A menu inside a card with `overflow: hidden` gets clipped. Open it in the top layer (`popover`) and place it
+  with anchor positioning (`position-anchor`, `position-try-fallbacks: flip-block`) so it flips near
+  edges.
 
 ### SU-101 Raised card
 - ❌ Level 0 even though the card belongs above its surroundings.

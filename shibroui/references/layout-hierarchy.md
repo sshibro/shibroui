@@ -1,8 +1,8 @@
-# Layout & hierarchy (SU-18 – SU-39, SU-137)
+# Layout & hierarchy (SU-18 – SU-39, SU-137, SU-203)
 
 - [Spacing & sizing](#spacing--sizing) SU-18–23
 - [Visual hierarchy](#visual-hierarchy) SU-24–29
-- [Optical balance](#optical-balance) SU-30–39, SU-137
+- [Optical balance](#optical-balance) SU-30–39, SU-137, SU-203
 
 ## Spacing & sizing
 
@@ -196,3 +196,18 @@ selection highlight (a segmented-control or tab pill) is centered on the item it
   - `audit.js`: SU-137 checks content vs container, and highlight vs selected item.
   - `scripts/measure-png.py`: checks screenshots, and flags "likely a mispositioned highlight" when a pill
     sits closer to one neighbour.
+
+### SU-203 Control rows keep one rhythm
+**Rule:** items in a control row (segmented controls, tab bars, toolbars, pagination, chip rows) have
+equal gaps between them, to ±1px. Segments are either equal-width with centered labels, or content-hugging
+with equal padding, never a mix. Flanking controls (‹ › chevrons, a trailing icon) sit at the same
+distance from the group on both sides. A selected pill has the same inset from its track on every side.
+- ❌ Chevrons 12px from the group on the left and 20px on the right; a pill inset 2px at the top and 4px
+  at the bottom.
+- ✅ 12px and 12px; the same inset all round.
+- **Why:** rows are read as one rhythm, so one odd gap looks like a bug even when nobody can say why.
+- **Do:** one `gap` on the row, no per-item margins, and the indicator positioned from the selected item
+  (SU-137), ideally with anchor positioning: `position-anchor` plus `anchor()` and `anchor-size()`.
+- **Measure:** `audit.js` SU-203 flags uneven gaps (when gaps differ by more than 2px but less than 2×,
+  so deliberate grouping isn't flagged) and an off-center selected item in its track.
+  `measure-png.py` reports row gaps in screenshots.

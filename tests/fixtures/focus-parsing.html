@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Focus ring parsing – shibroUI fixture</title>
+<style>
+  :root { --focus: #2563eb; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 16px/1.5 system-ui, sans-serif; color: #1f2937; background: #fff; }
+  main { max-width: 640px; margin: 0 auto; padding: 32px 24px; display: grid; gap: 24px; }
+  h1 { font-size: 24px; line-height: 1.2; margin: 0; }
+  .row { display: flex; gap: 12px; }
+  a, button { font: inherit; }
+  button { height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid #6b7280; background: #fff; color: #1f2937; }
+  /* Selector lists with :is() and a universal :focus-visible must both count as focus rings. */
+  html :is(a, button):focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  html *:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  :is(a, button):focus { outline: none; }
+  .nav a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px; color: #1d4ed8; text-decoration: underline; }
+  details { border: 1px solid #d1d5db; border-radius: 8px; padding: 0 16px; position: relative; }
+  summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; }
+  /* Closed details keep this absolutely positioned panel in layout; it must not count as visible. */
+  .popout { position: absolute; top: 4px; left: 4px; }
+  .popout a { font-size: 11px; color: #1d4ed8; }
+</style>
+</head>
+<body>
+<main id="main">
+  <h1>Focus ring parsing</h1>
+  <nav class="nav row" aria-label="Sections"><a href="#one">Overview</a><a href="#two">Billing</a></nav>
+  <div class="row"><button type="button">Save changes</button><button type="button">Cancel</button></div>
+  <details>
+    <summary>Methodology</summary>
+    <div class="popout"><a href="#three">Source data</a></div>
+  </details>
+</main>
+</body>
+</html>

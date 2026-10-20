@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign up - Northstar (forms good)</title>
+<style>
+  :root { --ink: #18181b; --muted: #52525b; --focus: #2563eb; --danger: #b91c1c; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, system-ui, sans-serif; font-size: 16px; line-height: 1.5; color: var(--ink); background: #fff; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  main { padding: 24px; max-width: 560px; }
+  h1 { font-size: 28px; line-height: 1.2; margin: 0 0 24px; }
+  label { display: block; margin-bottom: 4px; }
+  .hint { color: var(--muted); font-size: 14px; margin: 0 0 4px; }
+  .error { color: var(--danger); font-size: 14px; margin: -8px 0 16px; }
+  input { display: block; width: 100%; height: 44px; margin-bottom: 16px; padding: 0 12px; font: inherit; border: 1px solid #52525b; border-radius: 8px; background: #fff; color: var(--ink); }
+  input::placeholder { color: #6b6b6b; }
+  input:user-invalid, input[aria-invalid=true] { border-color: var(--danger); }
+  .btn { height: 44px; padding: 0 16px; border: 1px solid transparent; border-radius: 8px; background: #1d4ed8; color: #fff; font: inherit; cursor: pointer; }
+  .otp { display: flex; gap: 8px; margin-bottom: 16px; }
+  .otp input { width: 48px; margin: 0; text-align: center; }
+  form { margin-bottom: 32px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Create account</h1>
+  <form id="signup" autocomplete="on">
+    <label for="em">Email (required)</label>
+    <input id="em" name="email" type="email" autocomplete="email" required>
+    <label for="ph">Phone (optional)</label>
+    <p class="hint" id="ph-hint">Include the country code.</p>
+    <input id="ph" name="phone" type="tel" autocomplete="tel" aria-describedby="ph-hint">
+    <label for="co">Company (optional)</label>
+    <input id="co" name="company" type="text" autocomplete="organization">
+    <label for="pw">Password (required)</label>
+    <input id="pw" name="password" type="password" autocomplete="new-password" required>
+    <label for="zp">Postal code (optional)</label>
+    <input id="zp" name="zip" type="text" autocomplete="shipping postal-code">
+    <label for="coupon">Coupon</label>
+    <input id="coupon" aria-invalid="true" aria-describedby="coupon-error" value="XYZ">
+    <p class="error" id="coupon-error">This coupon expired on 1 March. Check the code or remove it.</p>
+    <label for="q">Search customers</label>
+    <input id="q" type="search" placeholder="Maya Chen" autocomplete="off">
+    <div class="otp" role="group" aria-label="Verification code">
+      <input maxlength="1" aria-label="Digit 1"><input maxlength="1" aria-label="Digit 2"><input maxlength="1" aria-label="Digit 3">
+    </div>
+    <button class="btn" type="submit">Create account</button>
+  </form>
+</main>
+</body>
+</html>

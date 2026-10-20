@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Revenue chart (bad)</title>
+<style>
+  :root { --ink: #18181b; --muted: #52525b; --surface: #ffffff; --page: #f4f4f5; --border: #d4d4d8; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, system-ui, sans-serif; font-size: 16px; line-height: 1.5; background: var(--page); color: var(--ink); }
+  :focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+  main { padding: 32px 24px; }
+  h1 { font-size: 28px; line-height: 1.2; margin: 0 0 16px; }
+  .card { background: var(--surface); border-radius: 12px; padding: 24px; margin-bottom: 24px; max-width: 640px; }
+  h2 { font-size: 18px; margin: 0 0 16px; }
+  svg, canvas { display: block; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Revenue</h1>
+  <section class="card" id="line-chart">
+    <h2>Monthly revenue</h2>
+    <!-- planted: no accessible name, no table, 10px axis text at ~2.3:1, a 1.8:1 series -->
+    <svg viewBox="0 0 480 240" width="480" height="240">
+      <line x1="40" y1="200" x2="470" y2="200" stroke="#e4e4e7" stroke-width="1"/>
+      <line x1="40" y1="120" x2="470" y2="120" stroke="#e4e4e7" stroke-width="1"/>
+      <line x1="40" y1="40" x2="470" y2="40" stroke="#e4e4e7" stroke-width="1"/>
+      <text x="8" y="204" font-size="10" fill="#a3acb8">0</text>
+      <text x="8" y="124" font-size="10" fill="#a3acb8">20k</text>
+      <text x="8" y="44" font-size="10" fill="#a3acb8">40k</text>
+      <text x="40" y="224" font-size="10" fill="#a3acb8">Jan</text>
+      <text x="240" y="224" font-size="10" fill="#a3acb8">Mar</text>
+      <text x="440" y="224" font-size="10" fill="#a3acb8">Jun</text>
+      <polyline points="40,180 140,150 240,130 340,90 440,60" fill="none" stroke="#b6c2d0" stroke-width="2"/>
+      <circle cx="440" cy="60" r="5" fill="#b6c2d0"/>
+    </svg>
+  </section>
+  <section class="card" id="canvas-chart">
+    <h2>Signups</h2>
+    <canvas width="480" height="240"></canvas>
+  </section>
+</main>
+</body>
+</html>

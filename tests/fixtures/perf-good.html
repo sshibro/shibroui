@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gallery page (performance, clean)</title>
+<style>
+  @font-face { font-family: "Brand"; src: local("Arial"); font-display: swap; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, system-ui, sans-serif; font-size: 16px; line-height: 1.5; background: #fff; color: #18181b; }
+  :focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+  main { padding: 24px; max-width: 720px; margin-inline: auto; }
+  h1 { font-size: 28px; line-height: 1.2; margin: 0 0 8px; }
+  .hero { display: block; max-width: 100%; height: auto; border-radius: 12px; margin-bottom: 24px; }
+  .inline { display: block; max-width: 100%; height: auto; margin-bottom: 24px; }
+  .chunk { content-visibility: auto; contain-intrinsic-size: auto 160px; margin-bottom: 24px; }
+  .panel { width: 240px; height: 48px; background: #e0e7ff; transition: transform 200ms ease-out, opacity 200ms ease-out; margin-bottom: 16px; transform-origin: left; }
+  .panel:hover { transform: scaleX(1.25); }
+  .skeleton-bar { width: 40%; height: 12px; background: #e4e4e7; transition: width 600ms ease-out; }
+  @media (prefers-reduced-motion: reduce) { .panel, .skeleton-bar { transition: none; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Weekend gallery</h1>
+  <img class="hero" alt="Harbour at dawn" width="640" height="320" fetchpriority="high" src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='320'%3E%3Crect width='640' height='320' fill='%23c7d2fe'/%3E%3C/svg%3E">
+  <img class="inline" alt="Detail of the quay" width="400" height="200" loading="lazy" src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200'%3E%3Crect width='400' height='200' fill='%23c7d2fe'/%3E%3C/svg%3E">
+  <div class="panel" aria-hidden="true"></div>
+  <div class="skeleton-bar" aria-hidden="true"></div>
+  <section class="chunk"><h2>Day one</h2><p>Arrival, a long walk along the water and dinner at the market hall.</p></section>
+  <section class="chunk"><h2>Day two</h2><p>Ferry across the bay, then the old town and the evening train.</p></section>
+</main>
+</body>
+</html>

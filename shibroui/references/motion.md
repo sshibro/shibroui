@@ -47,6 +47,9 @@ Classic animation principles, scoped to UI. Each one is a tool for clarity, not 
 - ❌ A rigid button (`1 × 1`): the press has no visible response.
 - ✅ A brief squeeze to `1.058 × 0.945` over `220ms`, then back.
 - Keep the label readable and the hit area still, and give reduced motion a static pressed state.
+- **Scope:** squash and overshoot only on direct manipulation (a drag released with momentum) and rare
+  celebratory moments. Never on routine UI such as menus, dialogs or toasts. Other installed skills
+  (impeccable, apple-design) take the same line.
 
 ### SU-79 Anticipation
 - ❌ Pull-to-refresh with no cue for when letting go will refresh.
@@ -61,13 +64,19 @@ Classic animation principles, scoped to UI. Each one is a tool for clarity, not 
 ### SU-81 Follow through & overlap
 - ❌ The files snap in (`0ms`) while the folder is still opening.
 - ✅ Folder `240ms`; rows settle at `340–460ms`, staggered just after it.
-- Use it only when it shows how parts belong together. Stagger steps of 30–60ms.
+- Use it only when it shows how parts belong together. Stagger steps of 30–80ms, with the whole stagger
+  ≤ 300ms.
 
 ### SU-82 Slow in & slow out (easing)
 - ❌ `240ms linear`: the indicator starts and stops abruptly.
 - ✅ `240ms cubic-bezier(.645,.045,.355,1)`.
-- Ease-out for entering, ease-in for exiting, ease-in-out for moving between positions. Keep `linear`
-  for continuous motion (spinners, marquees) and real progress values.
+- **Entering and state changes** (hover, press, toggle, open): ease-out.
+- **Moving between positions:** ease-in-out.
+- **Exiting:** a short ease-out, or an accelerate curve (`--ease-in`) only for elements leaving the
+  screen, at ≤ 150–200ms.
+- **Never ease-in on hover, press or state changes:** it feels sluggish at the start. `audit.js` warns on
+  it, and emil-design-eng and review-animations agree.
+- **Linear:** keep it for continuous motion (spinners, marquees) and real progress values.
 
 ### SU-83 Arcs
 - ❌ The item flies in a rigid straight line from "Add to bag" to the bag.
@@ -85,7 +94,8 @@ Classic animation principles, scoped to UI. Each one is a tool for clarity, not 
 - ✅ `140ms` in and `100ms` out.
 - Frequent interactions need short durations. Keep the hover-intent delay separate from the animation
   duration. Rough budget: micro feedback 100–200ms, small UI 150–250ms, panels and sheets 250–350ms.
-  Nothing routine should exceed ~500ms.
+  `audit.js` warns above 300ms for UI transitions, and above 500ms for panels, sheets, dialogs and page
+  transitions.
 
 ### SU-86 Noticeable errors (exaggeration)
 - ❌ A `±36px` shake over `700ms`: the error becomes hard to read.
@@ -132,7 +142,7 @@ Classic animation principles, scoped to UI. Each one is a tool for clarity, not 
 ```css
 :root {
   --ease-out: cubic-bezier(.22, 1, .36, 1);     /* entering */
-  --ease-in: cubic-bezier(.55, 0, 1, .45);      /* exiting */
+  --ease-in: cubic-bezier(.55, 0, 1, .45);      /* leaving the screen only, ≤ 200ms */
   --ease-in-out: cubic-bezier(.645, .045, .355, 1); /* moving */
   --dur-micro: 140ms; --dur-small: 200ms; --dur-panel: 300ms;
 }

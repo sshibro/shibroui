@@ -68,15 +68,20 @@
   details summary { cursor: pointer; font-weight: 500; min-height: 44px; display: flex; align-items: center; }
   details p { color: var(--muted); font-size: 14px; max-width: 65ch; }
   footer { padding: var(--s6) var(--s8); color: var(--muted); font-size: 14px; border-top: 1px solid var(--border); background: var(--surface); }
-  dialog { border: 0; border-radius: var(--r-card); padding: var(--s6); width: min(420px, 100% - 32px); box-shadow: 0 2px 6px rgb(0 0 0 / .10), 0 24px 48px rgb(0 0 0 / .18); }
+  /* The reset above zeroes the dialog's auto margins (centering) and the UA gives it color: CanvasText. */
+  dialog { margin: auto; color: var(--ink); border: 0; border-radius: var(--r-card); padding: var(--s6); width: min(420px, 100% - 32px); box-shadow: 0 2px 6px rgb(0 0 0 / .10), 0 24px 48px rgb(0 0 0 / .18); }
   dialog::backdrop { background: rgb(0 0 0 / .5); }
   dialog .actions { display: flex; justify-content: flex-end; gap: var(--s3); margin-top: var(--s6); }
   dialog h2 { margin-bottom: var(--s2); }
   dialog p { color: var(--muted); font-size: 14px; }
   @media (prefers-reduced-motion: reduce) { .btn { transition: none; } .btn:active { transform: none; } }
+  .filter::placeholder { color: #6b6b6b; }
+  .skip { position: absolute; left: 16px; top: 8px; z-index: 10; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: var(--r-control); background: #fff; color: #1d4ed8; text-decoration: underline; transform: translateY(-200%); }
+  .skip:focus-visible { transform: none; }
 </style>
 </head>
 <body>
+<a class="skip" href="#main">Skip to main content</a>
 <header class="topbar">
   <span class="logo">Acme Analytics</span>
   <nav aria-label="Primary"><a href="/overview" aria-current="page">Overview</a><a href="/reports">Reports</a><a href="/customers">Customers</a></nav>
@@ -90,7 +95,7 @@
   <nav class="sidebar" aria-label="Sections">
     <a href="/dashboard" aria-current="page">Dashboard</a><a href="/sales">Sales</a><a href="/marketing">Marketing</a><a href="/products">Products</a><a href="/team">Team</a>
   </nav>
-  <main>
+  <main id="main" tabindex="-1">
     <div class="page-header">
       <div><h1>Dashboard</h1><p>Last 30 days · updated 4 minutes ago</p></div>
       <div class="actions"><button class="btn" id="export-btn" aria-controls="export-dialog">Export</button><button class="btn btn-primary">Create report</button></div>
@@ -130,8 +135,8 @@
     <section class="card">
       <h2>Report settings</h2>
       <div role="tablist" aria-label="Report settings" style="margin-top: 16px">
-        <button role="tab" id="tab-general" aria-selected="true" aria-controls="panel-general">General</button>
-        <button role="tab" id="tab-alerts" aria-selected="false" aria-controls="panel-alerts">Alerts</button>
+        <button role="tab" id="tab-general" aria-selected="true" aria-controls="panel-general" tabindex="0">General</button>
+        <button role="tab" id="tab-alerts" aria-selected="false" aria-controls="panel-alerts" tabindex="-1">Alerts</button>
       </div>
       <div role="tabpanel" id="panel-general" aria-labelledby="tab-general"><p class="hint">Reports refresh every 15 minutes, in your workspace time zone.</p></div>
       <div role="tabpanel" id="panel-alerts" aria-labelledby="tab-alerts" hidden>
@@ -156,7 +161,7 @@
 </dialog>
 <script>
   document.querySelectorAll('[role=tab]').forEach((tab) => tab.addEventListener('click', () => {
-    document.querySelectorAll('[role=tab]').forEach((t) => { const on = t === tab; t.setAttribute('aria-selected', String(on)); document.getElementById(t.getAttribute('aria-controls')).hidden = !on; });
+    document.querySelectorAll('[role=tab]').forEach((t) => { const on = t === tab; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; document.getElementById(t.getAttribute('aria-controls')).hidden = !on; });
   }));
   const dialog = document.getElementById('export-dialog');
   document.getElementById('export-btn').addEventListener('click', () => dialog.showModal());

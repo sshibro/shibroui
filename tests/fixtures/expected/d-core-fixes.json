@@ -1,0 +1,19 @@
+{
+  "fixtures": [
+    {
+      "name": "focus parsing: :is() lists, *:focus-visible, closed details",
+      "url": "fixtures/focus-parsing.html",
+      "script": "audit.js",
+      "mustNotFlag": ["SU-70", "SU-61", "SU-62"],
+      "maxFails": 0
+    },
+    {
+      "name": "focus parsing, judged from CSS (background tab)",
+      "url": "fixtures/focus-parsing.html",
+      "script": "audit.js",
+      "setup": "window.__shibroAudit = { staticFocus: true }",
+      "mustNotFlag": ["SU-70", "SU-61", "SU-62"],
+      "maxFails": 0
+    }
+  ]
+}

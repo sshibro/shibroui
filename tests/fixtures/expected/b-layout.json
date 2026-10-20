@@ -1,0 +1,148 @@
+{
+  "fixtures": [
+    {
+      "name": "responsive problems at 320px",
+      "url": "fixtures/responsive-bad.html",
+      "script": "audit.js",
+      "viewport": {
+        "width": 320,
+        "height": 640
+      },
+      "mustFail": [
+        "SU-170",
+        "SU-171"
+      ],
+      "mustFlag": [
+        "SU-174",
+        "SU-175",
+        "SU-176",
+        "SU-177"
+      ],
+      "mustNotFlag": [
+        "SU-172"
+      ],
+      "maxFails": 5
+    },
+    {
+      "name": "responsive problems at 320px, text spacing probe on",
+      "url": "fixtures/responsive-bad.html",
+      "script": "audit.js",
+      "viewport": {
+        "width": 320,
+        "height": 640
+      },
+      "setup": "window.__shibroAudit = { textSpacing: true }",
+      "mustFlag": [
+        "SU-172"
+      ],
+      "maxFails": 5
+    },
+    {
+      "name": "responsive problems at 1280px",
+      "url": "fixtures/responsive-bad.html",
+      "script": "audit.js",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "mustFail": [
+        "SU-171"
+      ],
+      "mustFlag": [
+        "SU-170",
+        "SU-174",
+        "SU-176"
+      ],
+      "mustNotFlag": [
+        "SU-172",
+        "SU-175",
+        "SU-177"
+      ],
+      "maxFails": 3
+    },
+    {
+      "name": "responsive clean at 320px",
+      "url": "fixtures/responsive-good.html",
+      "script": "audit.js",
+      "viewport": {
+        "width": 320,
+        "height": 640
+      },
+      "setup": "window.__shibroAudit = { textSpacing: true }",
+      "maxFails": 0,
+      "maxWarns": 0
+    },
+    {
+      "name": "responsive clean at 1280px",
+      "url": "fixtures/responsive-good.html",
+      "script": "audit.js",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "maxFails": 0,
+      "maxWarns": 0
+    },
+    {
+      "name": "performance problems",
+      "url": "fixtures/perf-bad.html",
+      "script": "audit.js",
+      "mustFlag": [
+        "SU-192",
+        "SU-193",
+        "SU-194",
+        "SU-195",
+        "SU-196"
+      ],
+      "maxFails": 0
+    },
+    {
+      "name": "performance clean",
+      "url": "fixtures/perf-good.html",
+      "script": "audit.js",
+      "maxFails": 0,
+      "maxWarns": 0
+    },
+    {
+      "name": "international problems",
+      "url": "fixtures/intl-bad.html",
+      "script": "audit.js",
+      "mustFail": [
+        "SU-200"
+      ],
+      "mustFlag": [
+        "SU-197",
+        "SU-200",
+        "SU-201"
+      ],
+      "maxFails": 3,
+      "mustNotFlag": [
+        "SU-137"
+      ]
+    },
+    {
+      "name": "international clean",
+      "url": "fixtures/intl-good.html",
+      "script": "audit.js",
+      "maxFails": 0,
+      "maxWarns": 0
+    },
+    {
+      "name": "rhythm problems",
+      "url": "fixtures/rhythm-bad.html",
+      "script": "audit.js",
+      "mustFlag": [
+        "SU-203",
+        "SU-4"
+      ],
+      "maxFails": 0
+    },
+    {
+      "name": "rhythm clean",
+      "url": "fixtures/rhythm-good.html",
+      "script": "audit.js",
+      "maxFails": 0,
+      "maxWarns": 0
+    }
+  ]
+}

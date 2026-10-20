@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Revenue chart (good)</title>
+<style>
+  :root { --ink: #18181b; --muted: #52525b; --surface: #ffffff; --page: #f4f4f5; --border: #d4d4d8; --focus: #2563eb; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, system-ui, sans-serif; font-size: 16px; line-height: 1.5; background: var(--page); color: var(--ink); }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  main { padding: 32px 24px; }
+  h1 { font-size: 28px; line-height: 1.2; margin: 0 0 16px; letter-spacing: -0.02em; }
+  .card { background: var(--surface); border-radius: 12px; padding: 24px; margin: 0 0 24px; max-width: 640px; }
+  figcaption { font-size: 18px; font-weight: 600; margin-bottom: 16px; }
+  svg, canvas { display: block; }
+  .legend { display: flex; gap: 16px; font-size: 14px; color: var(--muted); margin-top: 8px; }
+  .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; margin-top: 16px; }
+  th, td { text-align: left; padding: 8px; border-bottom: 1px solid #e4e4e7; }
+  .num { text-align: right; }
+  details summary { cursor: pointer; font-size: 14px; font-weight: 500; min-height: 44px; display: flex; align-items: center; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Revenue</h1>
+  <figure class="card" id="line-chart" aria-labelledby="line-caption">
+    <figcaption id="line-caption">Monthly revenue, January to June</figcaption>
+    <svg viewBox="0 0 480 240" width="480" height="240" role="img" aria-label="Line chart: revenue grew from 12 thousand dollars in January to 41 thousand in June">
+      <line x1="40" y1="200" x2="470" y2="200" stroke="#d4d4d8" stroke-width="1"/>
+      <line x1="40" y1="120" x2="470" y2="120" stroke="#d4d4d8" stroke-width="1"/>
+      <line x1="40" y1="40" x2="470" y2="40" stroke="#d4d4d8" stroke-width="1"/>
+      <text x="4" y="204" font-size="12" fill="#52525b">0</text>
+      <text x="4" y="124" font-size="12" fill="#52525b">20k</text>
+      <text x="4" y="44" font-size="12" fill="#52525b">40k</text>
+      <text x="40" y="226" font-size="12" fill="#52525b">Jan</text>
+      <text x="240" y="226" font-size="12" fill="#52525b">Mar</text>
+      <text x="440" y="226" font-size="12" fill="#52525b">Jun</text>
+      <polyline points="40,180 140,150 240,130 340,90 440,60" fill="none" stroke="#2563eb" stroke-width="2"/>
+      <polyline points="40,190 140,185 240,170 340,160 440,150" fill="none" stroke="#b45309" stroke-width="2" stroke-dasharray="6 4"/>
+      <circle cx="440" cy="60" r="5" fill="#2563eb"/>
+    </svg>
+    <div class="legend"><span><i class="swatch" style="background:#2563eb"></i>Subscriptions</span><span><i class="swatch" style="background:#b45309"></i>Services</span></div>
+    <table>
+      <caption class="hint" style="text-align:left;color:#52525b;padding-bottom:8px">Data table</caption>
+      <thead><tr><th scope="col">Month</th><th scope="col" class="num">Subscriptions</th><th scope="col" class="num">Services</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Jan</th><td class="num">12k</td><td class="num">4k</td></tr>
+        <tr><th scope="row">Mar</th><td class="num">23k</td><td class="num">8k</td></tr>
+        <tr><th scope="row">Jun</th><td class="num">41k</td><td class="num">12k</td></tr>
+      </tbody>
+    </table>
+  </figure>
+  <figure class="card" id="bar-chart" aria-label="Signups by plan" role="group">
+    <svg viewBox="0 0 480 160" width="480" height="160" aria-labelledby="bar-title">
+      <title id="bar-title">Bar chart: signups by plan, Team is the largest</title>
+      <rect x="40" y="60" width="24" height="80" fill="#2563eb"/>
+      <rect x="120" y="30" width="24" height="110" fill="#2563eb"/>
+      <rect x="200" y="90" width="24" height="50" fill="#2563eb"/>
+      <text x="32" y="156" font-size="12" fill="#52525b">Free</text>
+      <text x="112" y="156" font-size="12" fill="#52525b">Team</text>
+      <text x="192" y="156" font-size="12" fill="#52525b">Scale</text>
+    </svg>
+    <details>
+      <summary>View as table</summary>
+      <table>
+        <thead><tr><th scope="col">Plan</th><th scope="col" class="num">Signups</th></tr></thead>
+        <tbody><tr><th scope="row">Free</th><td class="num">800</td></tr><tr><th scope="row">Team</th><td class="num">1,100</td></tr><tr><th scope="row">Scale</th><td class="num">500</td></tr></tbody>
+      </table>
+    </details>
+  </figure>
+  <figure class="card" id="canvas-chart" aria-label="Weekly signups chart">
+    <canvas width="480" height="240" role="img" aria-label="Weekly signups: steady growth from 100 to 400"></canvas>
+  </figure>
+</main>
+</body>
+</html>

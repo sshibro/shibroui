@@ -61,3 +61,7 @@ settings page, add an animated share sheet) with assertions, run with and withou
 The rules were distilled and paraphrased from the public examples in TypeUI's
 [UI Foundations configurator](https://www.typeui.sh/ui-foundations/configurator). Implementation notes,
 code, scripts and starter values are this repo's own.
+
+## License
+
+[MIT](LICENSE)

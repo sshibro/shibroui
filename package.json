@@ -2,11 +2,14 @@
   "name": "shibroui",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "description": "shibroUI: a Claude Code skill of 118 UI foundation rules with a checklist and browser audit.",
   "scripts": {
     "test": "node --test tests/*.test.mjs",
     "test:coverage": "node --test --experimental-test-coverage tests/*.test.mjs"
   },
-  "engines": { "node": ">=22" }
+  "engines": {
+    "node": ">=22"
+  }
 }

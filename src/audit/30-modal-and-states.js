@@ -37,6 +37,7 @@
       if (/^(SCRIPT|STYLE|TEMPLATE|NOSCRIPT)$/.test(el.tagName)) return;
       if ((css(el).display === 'none' || el.hidden) && el.parentElement && css(el.parentElement).display !== 'none') push(el, null, 'hidden element');
     });
+    if (found.length > 30) COVERAGE.capsHit.push(`hidden states: listed the first 30 of ${found.length}`);
     return found.slice(0, 30);
   }
 

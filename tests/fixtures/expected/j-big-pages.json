@@ -1,0 +1,32 @@
+{
+  "fixtures": [
+    {
+      "name": "long page with scroll reveals, no prepare: says it couldn't see them (H2)",
+      "url": "fixtures/longpage-reveal.html",
+      "script": "audit.js",
+      "mustNote": "opacity 0 \\(usually scroll reveals",
+      "mustNotFlag": ["SU-46"]
+    },
+    {
+      "name": "long page with scroll reveals, prepare: the planted 1.49:1 buttons fail (H2)",
+      "url": "fixtures/longpage-reveal.html",
+      "script": "audit.js",
+      "setup": "window.__shibroAudit = { prepare: true }",
+      "mustFail": ["SU-46"],
+      "mustNotNote": "opacity 0 \\(usually scroll reveals"
+    },
+    {
+      "name": "page map, prepare: the planted sizes and edge miss in the last band (H2)",
+      "url": "fixtures/longpage-reveal.html",
+      "script": "page-map.js",
+      "setup": "window.__shibroPageMap = { prepare: true }",
+      "mustFlag": ["SU-124", "SU-126"]
+    },
+    {
+      "name": "page map, no prepare: reports the hidden content (H2)",
+      "url": "fixtures/longpage-reveal.html",
+      "script": "page-map.js",
+      "mustNote": "opacity 0 \\(usually scroll reveals"
+    }
+  ]
+}

@@ -60,13 +60,17 @@
   }
   const layoutInlineTextOnly = (el, style) => TEXT_CONTAINER_DISPLAY.test(style.display) && el.textContent.trim().length > 0
     && !el.matches('input, select, textarea, img, svg, video, canvas') && [...el.children].every((c) => /^(inline|contents)/.test(css(c).display));
+  // A badge, chip or button paints its own box, and boxes center optically, so they're not baseline text.
+  const layoutPaintsBox = (style) => parseColor(style.backgroundColor).a > 0.05 || style.backgroundImage !== 'none'
+    || ['Top', 'Right', 'Bottom', 'Left'].some((side) => px(style[`border${side}Width`]) > 0 && parseColor(style[`border${side}Color`]).a > 0.05);
   function checkBaselines() {
     let rows = 0;
     for (const row of LAYOUT_ALL_ELEMENTS()) {
-      if (row.childElementCount < 2 || rows >= LAYOUT_RHYTHM.maxRows) continue;
+      if (row.childElementCount < 2) continue;
+      if (rows >= LAYOUT_RHYTHM.maxRows) { COVERAGE.capsHit.push(`baselines checked the first ${LAYOUT_RHYTHM.maxRows} mixed-size text rows`); break; }
       const style = css(row);
       if (!layoutIsFlexRow(style) || /baseline/.test(style.alignItems) || !isVisible(row)) continue;
-      const texts = [...row.children].filter((child) => isVisible(child) && layoutInlineTextOnly(child, css(child)));
+      const texts = [...row.children].filter((child) => isVisible(child) && layoutInlineTextOnly(child, css(child)) && !layoutPaintsBox(css(child)));
       if (texts.length < 2) continue;
       const sizes = texts.map((child) => px(css(child).fontSize));
       if (Math.max(...sizes) / Math.min(...sizes) < LAYOUT_RHYTHM.sizeRatio) continue;

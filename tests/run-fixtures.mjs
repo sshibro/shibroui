@@ -48,8 +48,9 @@ function judge(fixture, report) {
   const [failIds, anyIds] = [ids('fail'), ids()];
   const fails = items.filter((f) => f.level === 'fail');
   const warns = items.filter((f) => f.level === 'warn');
-  const hidden = report.coverage ? report.coverage.hiddenStates.length : (report.states || []).length;
+  const hidden = report.coverage && report.coverage.hiddenStates ? report.coverage.hiddenStates.length : (report.states || []).length;
   const list = (arr) => arr.map((f) => `${f.id} ${f.detail}`).join(' | ');
+  const said = [...(report.notes || []), ...Object.keys((report.coverage && report.coverage.skipped) || {}), ...((report.coverage && report.coverage.capsHit) || [])].join('\n');
   const problems = [
     ...(fixture.mustFail || []).filter((id) => !failIds.has(id)).map((id) => `missing fail ${id}`),
     ...(fixture.mustFlag || []).filter((id) => !anyIds.has(id)).map((id) => `missing flag ${id}`),
@@ -60,6 +61,9 @@ function judge(fixture, report) {
     ...(fixture.maxFails !== undefined && fails.length > fixture.maxFails ? [`${fails.length} fails > ${fixture.maxFails}: ${list(fails)}`] : []),
     ...(fixture.maxWarns !== undefined && warns.length > fixture.maxWarns ? [`${warns.length} warns > ${fixture.maxWarns}: ${list(warns)}`] : []),
     ...(fixture.minHiddenStates !== undefined && hidden < fixture.minHiddenStates ? [`${hidden} hidden states < ${fixture.minHiddenStates}`] : []),
+    // mustNote / mustNotNote: a regex over the report's notes, coverage.skipped and capsHit (what it says it couldn't see).
+    ...(fixture.mustNote && !new RegExp(fixture.mustNote).test(said) ? [`no note matching /${fixture.mustNote}/`] : []),
+    ...(fixture.mustNotNote && new RegExp(fixture.mustNotNote).test(said) ? [`unexpected note matching /${fixture.mustNotNote}/`] : []),
     ...(report.error ? [report.error] : []),
   ];
   return { problems, fails: fails.length, warns: warns.length };

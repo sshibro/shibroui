@@ -2,12 +2,15 @@
 // It is deliberately one expression (no imports, no exports) so any browser tool can run it:
 //   built-in / Chrome browser tools → run the contents as-is
 //   Playwright MCP                  → browser_evaluate with `() => <contents>`
-// Optional scope: window.__shibroAudit = { root: 'main', maxFindings: 400 } before running.
-// Every finding lists all of its instances (CSS paths) and `coverage` says what was checked, what was
-// skipped and why, and which hidden states (tabs, menus, dialogs, accordions) still need a run.
+//   a loader instead of pasting  → node scripts/serve.mjs, then
+//                                   await fetch('http://127.0.0.1:4399/audit.js').then((r) => r.text()).then((s) => (0, eval)(s))
+// Options: window.__shibroAudit = { root: 'main', band: 3, prepare: true, maxFindings: 400 } before running.
+// `prepare: true` scrolls the page once first (scroll reveals, lazy sections) and makes the result a Promise.
+// Every finding lists its instances (CSS paths) and `coverage` says what was checked, what was skipped and
+// why, what it couldn't see (`unseen`), and which hidden states (tabs, menus, dialogs) still need a run.
 (() => {
-  const VERSION = '0.3.0';
-  const OPTIONS = { root: null, maxFindings: 400, ...(window.__shibroAudit || {}) };
+  const VERSION = '0.4.0';
+  const OPTIONS = { root: null, band: null, prepare: false, maxFindings: 400, ...(window.__shibroAudit || {}) };
   // Reassigned once at run time: while a modal is open the page behind it is inert, so only the modal is audited.
   let ROOT = (OPTIONS.root && document.querySelector(OPTIONS.root)) || document.body;
   const LIMITS = {
@@ -51,19 +54,54 @@
     }
     return parts.join(' > ');
   }
-  // Same rule + same kind of element + same measurement collapse into one finding listing every instance.
+  // Same rule + same kind of element + same kind of measurement collapse into one finding listing every
+  // instance. Numbers are left out of the key, so a 20px and a 22px icon with the same problem are one
+  // finding (one fix); the other measured values are kept in `variants` and appended to the detail.
+  const MAX_VARIANTS = 4;
+  const detailShape = (detail) => String(detail || '').replace(/\d+(\.\d+)?/g, '#');
   function add(id, level, rule, el, detail, fix) {
     const signature = el && el.tagName ? `${el.tagName}${[...el.classList].join('.')}` : '';
-    const key = `${id}|${signature}|${detail}`;
+    const key = `${id}|${level}|${signature}|${detailShape(detail)}`;
     const existing = findings.get(key);
     const where = path(el);
     if (existing) {
       existing.count += 1;
       if (where && existing.instances.length < LIMITS.maxInstances) existing.instances.push(where);
+      if (detail !== existing.detail && !existing.variants.includes(detail) && existing.variants.length < MAX_VARIANTS) existing.variants.push(detail);
       return;
     }
-    findings.set(key, { id, level, rule, element: describe(el), detail, fix, count: 1, instances: where ? [where] : [] });
+    findings.set(key, { id, level, rule, element: describe(el), detail, fix, count: 1, instances: where ? [where] : [], variants: [] });
   }
+  // Findings of one rule that share the exact same fix across 2+ kinds of element and 20+ instances have one
+  // cause (a missing global focus style, a sticky header without scroll padding): report them as one
+  // root-cause finding, with the per-element groups kept in `groups`.
+  const ROOT_CAUSE = { minKinds: 2, minInstances: 20 };
+  function foldRootCauses(list) {
+    const byFix = new Map();
+    for (const f of list) {
+      if (!f.fix) continue;
+      const key = `${f.id}|${f.level}|${f.fix}`;
+      byFix.set(key, [...(byFix.get(key) || []), f]);
+    }
+    const folded = new Set();
+    const merged = [];
+    for (const group of byFix.values()) {
+      const total = group.reduce((sum, f) => sum + f.count, 0);
+      if (group.length < ROOT_CAUSE.minKinds || total < ROOT_CAUSE.minInstances) continue;
+      group.forEach((f) => folded.add(f));
+      const [first] = group;
+      merged.push({ ...first, element: `${group.length} kinds of element`, rootCause: true,
+        detail: `${total} instances across ${group.length} kinds of element share one fix: ${first.detail}`,
+        count: total, instances: group.flatMap((f) => f.instances).slice(0, LIMITS.maxInstances), variants: [],
+        groups: group.map((f) => ({ element: f.element, count: f.count, detail: f.detail })) });
+    }
+    return [...list.filter((f) => !folded.has(f)), ...merged];
+  }
+  // The public shape: the first detail plus the other measured values; `instancesSampled` when the list is capped.
+  const finalizeFinding = ({ variants, ...f }) => ({
+    ...f, detail: variants && variants.length ? `${f.detail} (also: ${variants.join('; ')})` : f.detail,
+    ...(f.count > f.instances.length ? { instancesSampled: true } : {}),
+  });
   const COVERAGE = { checked: {}, skipped: {}, capsHit: [] };
   const checked = (key, n = 1) => { COVERAGE.checked[key] = (COVERAGE.checked[key] || 0) + n; };
   const skipped = (key) => { COVERAGE.skipped[key] = (COVERAGE.skipped[key] || 0) + 1; };
@@ -242,6 +280,107 @@
     return parseColor(s.backgroundColor).a > 0.05 || border || s.boxShadow !== 'none' || s.backgroundImage !== 'none';
   };
 
+  // ---------- big pages: prepare sweep, content hidden until scrolled, bands (H2, H3) ----------
+  // Scroll reveals (opacity 0 until an IntersectionObserver fires), lazy sections and content-visibility
+  // regions don't render until the page has been scrolled. `prepare: true` scrolls the page's scroller once,
+  // top to bottom, so they render; without it, the run reports how much of the page it couldn't see.
+  const PREPARE = { stepRatio: 0.8, waitMs: 120, settleMs: 450, maxSteps: 400, minTextChars: 20 };
+  // Set by prepareSweep(): what was hidden before the sweep. The SU-209 check reads it.
+  let PREPARED = null;
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  // The element that scrolls the page: the document, or an app shell's own scrolling region (B8).
+  function pageScroller() {
+    const doc = document.scrollingElement || document.documentElement;
+    if (doc.scrollHeight > innerHeight + 1) return doc;
+    const scrolling = [...document.querySelectorAll('main, [role=main], body > *, body > * > *, body > * > * > *')]
+      .filter((el) => /auto|scroll/.test(css(el).overflowY) && el.scrollHeight > el.clientHeight + 1);
+    return scrolling.sort((a, b) => b.clientHeight * b.clientWidth - a.clientHeight * a.clientWidth)[0] || doc;
+  }
+  const isDocumentScroller = (el) => el === document.scrollingElement || el === document.documentElement;
+  // Laid-out content that people can't see only because it (or an ancestor) sits at opacity 0, outermost
+  // container first. In normal flow and holding text or controls, it's almost always a scroll reveal.
+  function transparentContainers() {
+    const containers = [];
+    for (const el of [...ROOT.querySelectorAll('*')].slice(0, LIMITS.maxElements)) {
+      const style = css(el);
+      if (style.opacity !== '0' || style.display === 'none' || style.visibility === 'hidden') continue;
+      if (/absolute|fixed/.test(style.position) || el.matches('[role=tooltip], input, option')) continue;
+      if (containers.some((c) => c.contains(el))) continue;
+      const r = el.getBoundingClientRect();
+      // A small control revealed on hover (row actions) is SU-174's business; reveals hide content blocks.
+      if (r.width < 160 && r.height < 80) continue;
+      if (el.closest('dialog:not([open]), [aria-hidden="true"], [inert]')) continue;
+      if (el.textContent.trim().length < PREPARE.minTextChars && !el.querySelector(INTERACTIVE)) continue;
+      containers.push(el);
+    }
+    return containers;
+  }
+  // content-visibility: auto regions the browser is still skipping (off-screen and never rendered).
+  const skippedContentVisibility = () => [...ROOT.querySelectorAll('*')].slice(0, LIMITS.maxElements)
+    .filter((el) => css(el).contentVisibility === 'auto' && el.checkVisibility && !el.checkVisibility({ contentVisibilityAuto: true }));
+  async function prepareSweep() {
+    const scroller = pageScroller();
+    const started = performance.now();
+    const before = document.querySelectorAll('*').length;
+    const hiddenAtStart = transparentContainers();
+    // Hidden at load although already on screen: a reveal people wait for, or never see without JS.
+    const firstScreen = hiddenAtStart.filter((el) => { const r = el.getBoundingClientRect(); return r.top < innerHeight && r.bottom > 0; });
+    const start = scroller.scrollTop;
+    const step = Math.max(200, Math.round((isDocumentScroller(scroller) ? innerHeight : scroller.clientHeight) * PREPARE.stepRatio));
+    let steps = 0;
+    for (let y = 0; y <= scroller.scrollHeight && steps < PREPARE.maxSteps; y += step) {
+      scroller.scrollTo({ top: y, behavior: 'instant' });
+      steps += 1;
+      await sleep(PREPARE.waitMs);
+    }
+    if (steps >= PREPARE.maxSteps) COVERAGE.capsHit.push(`prepare stopped after ${PREPARE.maxSteps} scroll steps`);
+    scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'instant' });
+    await sleep(PREPARE.waitMs);
+    scroller.scrollTo({ top: start, behavior: 'instant' });
+    await sleep(PREPARE.settleMs);
+    PREPARED = {
+      scroller: isDocumentScroller(scroller) ? 'document' : path(scroller), steps, ms: Math.round(performance.now() - started),
+      elementsBefore: before, elementsAfter: document.querySelectorAll('*').length,
+      hiddenAtStart: hiddenAtStart.length,
+      hiddenInFirstViewport: firstScreen,
+    };
+    return PREPARED;
+  }
+  // What the run couldn't see, for coverage: opacity-0 content and skipped content-visibility regions.
+  function unseenContent() {
+    const transparent = transparentContainers();
+    const elements = transparent.reduce((sum, el) => sum + el.querySelectorAll('*').length + 1, 0);
+    const skippedCv = skippedContentVisibility();
+    if (transparent.length) {
+      COVERAGE.skipped[`laid out but at opacity 0 (likely scroll reveals): ${elements} elements in ${transparent.length} container(s)`] = transparent.length;
+      notes.push(`${transparent.length} container(s) holding ${elements} elements were at opacity 0 (usually scroll reveals that haven't fired), so nothing inside them was measured. ${PREPARED ? 'They stayed hidden after the prepare sweep: check them by hand.' : 'Run again with window.__shibroAudit = { prepare: true } and await the result.'}`);
+    }
+    if (skippedCv.length) COVERAGE.skipped[`content-visibility: auto regions not rendered yet: ${skippedCv.length}`] = skippedCv.length;
+    return { transparentContainers: transparent.length, transparentElements: elements, sample: transparent.slice(0, 5).map(path), contentVisibilitySkipped: skippedCv.length };
+  }
+
+  // Bands: the page's top-level blocks in reading order (header, hero, sections, footer), the same way
+  // page-map.js finds them. Tall wrappers that only stack full-width blocks are opened up.
+  const BAND = { minHeight: 24, mergeBelow: 160, openAbove: 1.5, fullWidth: 0.9, maxDepth: 4 };
+  function pageBands() {
+    const blocks = (parent) => [...parent.children].filter((el) => !/^(SCRIPT|STYLE|NOSCRIPT|TEMPLATE|LINK|META)$/.test(el.tagName)
+      && !/absolute|fixed/.test(css(el).position) && el.getBoundingClientRect().height >= BAND.minHeight && isVisible(el));
+    const open = (el, depth) => {
+      const r = el.getBoundingClientRect();
+      const s = css(el);
+      const inner = r.width - px(s.paddingLeft) - px(s.paddingRight) - px(s.borderLeftWidth) - px(s.borderRightWidth);
+      const kids = blocks(el);
+      const stacks = kids.length >= 2 && kids.every((k) => k.getBoundingClientRect().width >= inner * BAND.fullWidth);
+      return depth < BAND.maxDepth && r.height > innerHeight * BAND.openAbove && stacks ? kids.flatMap((k) => open(k, depth + 1)) : [el];
+    };
+    const flat = blocks(document.body).flatMap((el) => open(el, 0));
+    // A short block (a section heading, a divider) joins the band after it.
+    return flat.reduce((bands, el) => {
+      const last = bands[bands.length - 1];
+      if (last && last.pending) return [...bands.slice(0, -1), { el, parts: [...last.parts, el], pending: el.getBoundingClientRect().height < BAND.mergeBelow }];
+      return [...bands, { el, parts: [el], pending: el.getBoundingClientRect().height < BAND.mergeBelow && el.tagName !== 'HEADER' }];
+    }, []).map(({ el, parts }) => ({ el: parts.length > 1 && parts.every((p) => p.parentElement === parts[0].parentElement) && blocks(parts[0].parentElement).length === parts.length ? parts[0].parentElement : el, parts }));
+  }
   // ---------- 1. text contrast (SU-45, SU-46, SU-49) ----------
   function checkTextContrast() {
     const walker = document.createTreeWalker(ROOT, NodeFilter.SHOW_TEXT, {
@@ -943,6 +1082,7 @@
       if (/^(SCRIPT|STYLE|TEMPLATE|NOSCRIPT)$/.test(el.tagName)) return;
       if ((css(el).display === 'none' || el.hidden) && el.parentElement && css(el.parentElement).display !== 'none') push(el, null, 'hidden element');
     });
+    if (found.length > 30) COVERAGE.capsHit.push(`hidden states: listed the first 30 of ${found.length}`);
     return found.slice(0, 30);
   }
 
@@ -1873,13 +2013,17 @@
   }
   const layoutInlineTextOnly = (el, style) => TEXT_CONTAINER_DISPLAY.test(style.display) && el.textContent.trim().length > 0
     && !el.matches('input, select, textarea, img, svg, video, canvas') && [...el.children].every((c) => /^(inline|contents)/.test(css(c).display));
+  // A badge, chip or button paints its own box, and boxes center optically, so they're not baseline text.
+  const layoutPaintsBox = (style) => parseColor(style.backgroundColor).a > 0.05 || style.backgroundImage !== 'none'
+    || ['Top', 'Right', 'Bottom', 'Left'].some((side) => px(style[`border${side}Width`]) > 0 && parseColor(style[`border${side}Color`]).a > 0.05);
   function checkBaselines() {
     let rows = 0;
     for (const row of LAYOUT_ALL_ELEMENTS()) {
-      if (row.childElementCount < 2 || rows >= LAYOUT_RHYTHM.maxRows) continue;
+      if (row.childElementCount < 2) continue;
+      if (rows >= LAYOUT_RHYTHM.maxRows) { COVERAGE.capsHit.push(`baselines checked the first ${LAYOUT_RHYTHM.maxRows} mixed-size text rows`); break; }
       const style = css(row);
       if (!layoutIsFlexRow(style) || /baseline/.test(style.alignItems) || !isVisible(row)) continue;
-      const texts = [...row.children].filter((child) => isVisible(child) && layoutInlineTextOnly(child, css(child)));
+      const texts = [...row.children].filter((child) => isVisible(child) && layoutInlineTextOnly(child, css(child)) && !layoutPaintsBox(css(child)));
       if (texts.length < 2) continue;
       const sizes = texts.map((child) => px(css(child).fontSize));
       if (Math.max(...sizes) / Math.min(...sizes) < LAYOUT_RHYTHM.sizeRatio) continue;
@@ -2246,57 +2390,76 @@
     window.__shibroAuditResult = { tool: 'shibroUI audit', version: VERSION, error };
     return window.__shibroAuditResult;
   }
-  const started = performance.now();
-  // Measure the resting state: an entrance fade caught mid-flight (or frozen in a background tab) would
-  // make whole panels look invisible. Finite running animations are fast-forwarded to their end.
-  const running = document.getAnimations ? document.getAnimations().filter((a) => {
-    const timing = a.effect && a.effect.getComputedTiming();
-    return a.playState !== 'finished' && a.playState !== 'idle' && timing && Number.isFinite(timing.endTime);
-  }) : [];
-  running.forEach((a) => { try { a.finish(); } catch { /* infinite or detached animation */ } });
-  if (running.length) notes.push(`${running.length} running animation(s) were finished first so the resting state was measured.`);
-  const OPEN_MODAL = OPTIONS.root ? null : findOpenModal();
-  if (OPEN_MODAL) {
-    ROOT = OPEN_MODAL;
-    notes.push('A modal is open, so only its contents were audited (the page behind it is inert).');
-  }
-  const scroll = [scrollX, scrollY];
-  const previouslyFocused = document.activeElement;
-  const sheetInfo = collectRules();
-  const targets = targetsList();
-  const checks = [
-    ['text contrast', checkTextContrast], ['fields', checkFields], ['targets', () => checkTargets(targets)],
-    ['focus', () => checkFocus(targets, sheetInfo.rules)], ['tables', checkTables], ['control heights', () => checkControlHeights(targets)],
-    ['radius', checkRadius], ['reading', checkReading], ['links', checkLinks], ['choices', checkChoices], ['misc', checkMisc], ['centering', checkCentering], ['motion', () => checkMotion(sheetInfo)],
-  ];
-  const checkContext = { targets, rules: sheetInfo.rules, keyframes: sheetInfo.keyframes, reduced: sheetInfo.reduced };
-  const allChecks = [...checks, ...REGISTERED.map(([name, check]) => [name, () => check(checkContext)])];
-  for (const [name, check] of allChecks) {
-    try { check(); } catch (error) { notes.push(`Check "${name}" errored: ${error.message}`); }
-  }
-  scrollTo(scroll[0], scroll[1]);
-  innerScrolls.forEach(([left, top], node) => node.scrollTo(left, top));
-  if (previouslyFocused && previouslyFocused.focus) previouslyFocused.focus({ preventScroll: true });
+  function runAudit() {
+    const started = performance.now();
+    // Measure the resting state: an entrance fade caught mid-flight (or frozen in a background tab) would
+    // make whole panels look invisible. Finite running animations are fast-forwarded to their end.
+    const running = document.getAnimations ? document.getAnimations().filter((a) => {
+      const timing = a.effect && a.effect.getComputedTiming();
+      return a.playState !== 'finished' && a.playState !== 'idle' && timing && Number.isFinite(timing.endTime);
+    }) : [];
+    running.forEach((a) => { try { a.finish(); } catch { /* infinite or detached animation */ } });
+    if (running.length) notes.push(`${running.length} running animation(s) were finished first so the resting state was measured.`);
+    if (OPTIONS.band && !OPTIONS.root) {
+      const bands = pageBands();
+      const band = bands[OPTIONS.band - 1];
+      if (band) { ROOT = band.el; notes.push(`Scoped to band ${OPTIONS.band} of ${bands.length} (${path(band.el)}), as page-map.js numbers them.`); }
+      else notes.push(`There is no band ${OPTIONS.band} (the page has ${bands.length}), so the whole page was audited.`);
+    }
+    const OPEN_MODAL = OPTIONS.root ? null : findOpenModal();
+    if (OPEN_MODAL) {
+      ROOT = OPEN_MODAL;
+      notes.push('A modal is open, so only its contents were audited (the page behind it is inert).');
+    }
+    const scroll = [scrollX, scrollY];
+    const previouslyFocused = document.activeElement;
+    const sheetInfo = collectRules();
+    const targets = targetsList();
+    const checks = [
+      ['text contrast', checkTextContrast], ['fields', checkFields], ['targets', () => checkTargets(targets)],
+      ['focus', () => checkFocus(targets, sheetInfo.rules)], ['tables', checkTables], ['control heights', () => checkControlHeights(targets)],
+      ['radius', checkRadius], ['reading', checkReading], ['links', checkLinks], ['choices', checkChoices], ['misc', checkMisc], ['centering', checkCentering], ['motion', () => checkMotion(sheetInfo)],
+    ];
+    const checkContext = { targets, rules: sheetInfo.rules, keyframes: sheetInfo.keyframes, reduced: sheetInfo.reduced };
+    const allChecks = [...checks, ...REGISTERED.map(([name, check]) => [name, () => check(checkContext)])];
+    for (const [name, check] of allChecks) {
+      try { check(); } catch (error) { notes.push(`Check "${name}" errored: ${error.message}`); }
+    }
+    scrollTo(scroll[0], scroll[1]);
+    innerScrolls.forEach(([left, top], node) => node.scrollTo(left, top));
+    if (previouslyFocused && previouslyFocused.focus) previouslyFocused.focus({ preventScroll: true });
 
-  const order = { fail: 0, warn: 1, info: 2 };
-  const list = [...findings.values()].sort((a, b) => order[a.level] - order[b.level] || parseInt(a.id.slice(3), 10) - parseInt(b.id.slice(3), 10));
-  const summary = list.reduce((acc, f) => ({ ...acc, [f.level]: acc[f.level] + 1 }), { fail: 0, warn: 0, info: 0 });
-  const byRule = list.reduce((acc, f) => ({ ...acc, [f.id]: (acc[f.id] || 0) + f.count }), {});
-  let states = [];
-  try { states = hiddenStates(); } catch (error) { notes.push(`Hidden-state scan errored: ${error.message}`); }
-  if (list.length > OPTIONS.maxFindings) COVERAGE.capsHit.push(`${list.length - OPTIONS.maxFindings} findings beyond maxFindings were cut; raise window.__shibroAudit.maxFindings or scope by region`);
-  const report = {
-    tool: 'shibroUI audit', version: VERSION, url: location.href, viewport: `${innerWidth}×${innerHeight}`,
-    summary: { ...summary, instances: list.reduce((sum, f) => sum + f.count, 0), byRule },
-    findings: list.slice(0, OPTIONS.maxFindings), truncated: list.length > OPTIONS.maxFindings,
-    coverage: { ...COVERAGE, hiddenStates: states },
-    notes: [...notes,
-      states.length ? `${states.length} hidden state(s) were not audited (coverage.hiddenStates): open each one and run the audit again.` : 'No hidden states detected.',
-      'Fix every instance listed in findings[].instances, not just the first.',
-      'Layout, hierarchy and visual-system problems are page-map.js territory (references/composition.md).'],
-    ms: Math.round(performance.now() - started),
-  };
-  // Also exposed for tools that load the file with a <script> tag instead of evaluating it.
-  window.__shibroAuditResult = report;
-  return report;
+    let unseen = null;
+    try { unseen = unseenContent(); } catch (error) { notes.push(`Unseen-content scan errored: ${error.message}`); }
+    const totalElements = ROOT.querySelectorAll('*').length;
+    if (totalElements > LIMITS.maxElements) COVERAGE.capsHit.push(`element walks stopped at ${LIMITS.maxElements} of ${totalElements} elements; scope with window.__shibroAudit = { root } or { band } and run per region`);
+    const order = { fail: 0, warn: 1, info: 2 };
+    const list = foldRootCauses([...findings.values()])
+      .sort((a, b) => order[a.level] - order[b.level] || parseInt(a.id.slice(3), 10) - parseInt(b.id.slice(3), 10))
+      .map(finalizeFinding);
+    const sampled = list.filter((f) => f.instancesSampled).length;
+    if (sampled) COVERAGE.capsHit.push(`${sampled} finding(s) list a sample of ${LIMITS.maxInstances} instances (see count): fix the pattern, not just the listed ones`);
+    const summary = list.reduce((acc, f) => ({ ...acc, [f.level]: acc[f.level] + 1 }), { fail: 0, warn: 0, info: 0 });
+    const byRule = list.reduce((acc, f) => ({ ...acc, [f.id]: (acc[f.id] || 0) + f.count }), {});
+    let states = [];
+    try { states = hiddenStates(); } catch (error) { notes.push(`Hidden-state scan errored: ${error.message}`); }
+    if (list.length > OPTIONS.maxFindings) COVERAGE.capsHit.push(`${list.length - OPTIONS.maxFindings} findings beyond maxFindings were cut; raise window.__shibroAudit.maxFindings or scope by region`);
+    const prepared = PREPARED ? { ...PREPARED, hiddenInFirstViewport: PREPARED.hiddenInFirstViewport.map(path) } : null;
+    const report = {
+      tool: 'shibroUI audit', version: VERSION, url: location.href, viewport: `${innerWidth}×${innerHeight}`,
+      summary: { ...summary, instances: list.reduce((sum, f) => sum + f.count, 0), byRule },
+      findings: list.slice(0, OPTIONS.maxFindings), truncated: list.length > OPTIONS.maxFindings,
+      coverage: { ...COVERAGE, hiddenStates: states, unseen, prepared },
+      notes: [...notes,
+        states.length ? `${states.length} hidden state(s) were not audited (coverage.hiddenStates): open each one and run the audit again.` : 'No hidden states detected.',
+        'Fix every instance listed in findings[].instances, not just the first. A rootCause finding is one fix for all of its groups.',
+        'Layout, hierarchy and visual-system problems are page-map.js territory (references/composition.md).'],
+      ms: Math.round(performance.now() - started) + (PREPARED ? PREPARED.ms : 0),
+    };
+    // Also exposed for tools that load the file with a <script> tag instead of evaluating it.
+    window.__shibroAuditResult = report;
+    return report;
+  }
+  // prepare: scroll the page once first (scroll reveals, lazy sections); the result is then a Promise.
+  return OPTIONS.prepare ? prepareSweep().then(runAudit) : runAudit();
 })()

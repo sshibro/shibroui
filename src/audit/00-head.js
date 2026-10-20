@@ -2,12 +2,15 @@
 // It is deliberately one expression (no imports, no exports) so any browser tool can run it:
 //   built-in / Chrome browser tools → run the contents as-is
 //   Playwright MCP                  → browser_evaluate with `() => <contents>`
-// Optional scope: window.__shibroAudit = { root: 'main', maxFindings: 400 } before running.
-// Every finding lists all of its instances (CSS paths) and `coverage` says what was checked, what was
-// skipped and why, and which hidden states (tabs, menus, dialogs, accordions) still need a run.
+//   a loader instead of pasting  → node scripts/serve.mjs, then
+//                                   await fetch('http://127.0.0.1:4399/audit.js').then((r) => r.text()).then((s) => (0, eval)(s))
+// Options: window.__shibroAudit = { root: 'main', band: 3, prepare: true, maxFindings: 400 } before running.
+// `prepare: true` scrolls the page once first (scroll reveals, lazy sections) and makes the result a Promise.
+// Every finding lists its instances (CSS paths) and `coverage` says what was checked, what was skipped and
+// why, what it couldn't see (`unseen`), and which hidden states (tabs, menus, dialogs) still need a run.
 (() => {
-  const VERSION = '0.3.0';
-  const OPTIONS = { root: null, maxFindings: 400, ...(window.__shibroAudit || {}) };
+  const VERSION = '0.4.0';
+  const OPTIONS = { root: null, band: null, prepare: false, maxFindings: 400, ...(window.__shibroAudit || {}) };
   // Reassigned once at run time: while a modal is open the page behind it is inert, so only the modal is audited.
   let ROOT = (OPTIONS.root && document.querySelector(OPTIONS.root)) || document.body;
   const LIMITS = {

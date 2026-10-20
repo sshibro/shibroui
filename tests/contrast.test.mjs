@@ -256,3 +256,14 @@ test('should exit 2 and name the token when a pair references an unknown token',
   assert.equal(result.status, 2);
   assert.match(result.stderr, /missing/);
 });
+
+test('should note neutral tokens at chroma 0 next to a chromatic accent (SU-257)', () => {
+  const palette = { ...PASSING_PALETTE, schemes: { light: { ...PASSING_PALETTE.schemes.light, accent: '#4f46e5' } } };
+  const { stdout } = runCli(['--palette', writePalette(palette)]);
+  assert.match(stdout, /info: light: .*border.* chroma 0 next to the accent accent/);
+});
+
+test('should not note neutrals when there is no chromatic accent', () => {
+  const { stdout } = runCli(['--palette', writePalette(PASSING_PALETTE)]);
+  assert.doesNotMatch(stdout, /SU-257/);
+});

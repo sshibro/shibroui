@@ -1,7 +1,7 @@
 # shibroUI checklist
 
 Use it as the final self-check after building, and as the walk-through for reviews. Items marked
-**[audit]** are measured by `scripts/audit.js` and **[map]** by `scripts/page-map.js`; the rest need your
+**[audit]** are measured by `scripts/audit.js`, **[map]** by `scripts/page-map.js` and **[png]** by `scripts/measure-png.py` on screenshots; the rest need your
 eyes. For a whole screen, start with the Screen section and do it first. Skip component sections that don't
 apply.
 
@@ -64,6 +64,7 @@ apply.
 - [ ] Asymmetric icons (play) nudged to look centered (SU-31)
 - [ ] Mixed icon shapes balanced by area; solid icons lightened next to text (SU-32, SU-33)
 - [ ] All-caps labels slightly smaller / optically centered (SU-35, SU-36)
+- [ ] Labels centered in pills/buttons/chips (±2px); selection highlights centered on their item **[audit]** **[png]** (SU-137)
 
 ## Color & contrast
 - [ ] Text ≥ 4.5:1 (large ≥ 3:1), including placeholders and muted text **[audit]** (SU-45)

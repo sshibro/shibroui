@@ -2,29 +2,162 @@
   "fixtures": [
     {
       "name": "settings page (planted issues)",
-      "url": "../evals/files/settings.html", "script": "audit.js",
-      "mustFail": ["SU-6", "SU-9", "SU-17", "SU-44", "SU-45", "SU-46", "SU-50", "SU-58", "SU-70", "SU-93"],
-      "mustFlag": ["SU-7", "SU-15", "SU-16", "SU-61", "SU-62", "SU-63", "SU-71", "SU-72", "SU-78", "SU-82", "SU-85", "SU-86"],
+      "url": "../evals/files/settings.html",
+      "script": "audit.js",
+      "mustFail": [
+        "SU-6",
+        "SU-9",
+        "SU-17",
+        "SU-44",
+        "SU-45",
+        "SU-46",
+        "SU-50",
+        "SU-58",
+        "SU-70",
+        "SU-93"
+      ],
+      "mustFlag": [
+        "SU-7",
+        "SU-15",
+        "SU-16",
+        "SU-61",
+        "SU-62",
+        "SU-63",
+        "SU-71",
+        "SU-72",
+        "SU-78",
+        "SU-82",
+        "SU-85",
+        "SU-86"
+      ],
       "maxFails": 40
     },
-    { "name": "clean settings page", "url": "fixtures/good.html", "script": "audit.js", "maxFails": 0, "maxWarns": 0 },
+    {
+      "name": "clean settings page",
+      "url": "fixtures/good.html",
+      "script": "audit.js",
+      "maxFails": 0,
+      "maxWarns": 0
+    },
     {
       "name": "complex dashboard (planted issues)",
-      "url": "../evals/files/dashboard.html", "script": "audit.js",
-      "mustFail": ["SU-6", "SU-9", "SU-17", "SU-44", "SU-45", "SU-46", "SU-50", "SU-58", "SU-70", "SU-93", "SU-106"],
-      "mustFlag": ["SU-5", "SU-7", "SU-15", "SU-16", "SU-61", "SU-62", "SU-71", "SU-72", "SU-78", "SU-82", "SU-85"],
-      "minHiddenStates": 3, "maxFails": 60
+      "url": "../evals/files/dashboard.html",
+      "script": "audit.js",
+      "mustFail": [
+        "SU-6",
+        "SU-9",
+        "SU-17",
+        "SU-44",
+        "SU-45",
+        "SU-46",
+        "SU-50",
+        "SU-58",
+        "SU-70",
+        "SU-93",
+        "SU-106"
+      ],
+      "mustFlag": [
+        "SU-5",
+        "SU-7",
+        "SU-15",
+        "SU-16",
+        "SU-61",
+        "SU-62",
+        "SU-71",
+        "SU-72",
+        "SU-78",
+        "SU-82",
+        "SU-85"
+      ],
+      "minHiddenStates": 3,
+      "maxFails": 60
     },
-    { "name": "complex dashboard, export dialog open", "url": "../evals/files/dashboard.html", "script": "audit.js", "open": "#export-btn", "mustFail": ["SU-46", "SU-70"], "mustFlag": ["SU-103"], "maxFails": 10 },
-    { "name": "complex dashboard, more menu open", "url": "../evals/files/dashboard.html", "script": "audit.js", "open": "#more-btn", "mustFail": ["SU-62"], "maxFails": 60 },
+    {
+      "name": "complex dashboard, export dialog open",
+      "url": "../evals/files/dashboard.html",
+      "script": "audit.js",
+      "open": "#export-btn",
+      "mustFail": [
+        "SU-46",
+        "SU-70"
+      ],
+      "mustFlag": [
+        "SU-103"
+      ],
+      "maxFails": 10
+    },
+    {
+      "name": "complex dashboard, more menu open",
+      "url": "../evals/files/dashboard.html",
+      "script": "audit.js",
+      "open": "#more-btn",
+      "mustFail": [
+        "SU-62"
+      ],
+      "maxFails": 60
+    },
     {
       "name": "complex dashboard page map",
-      "url": "../evals/files/dashboard.html", "script": "page-map.js",
-      "mustFlag": ["SU-119", "SU-121", "SU-124", "SU-125", "SU-126", "SU-127", "SU-128", "SU-129", "SU-130", "SU-132", "SU-136"]
+      "url": "../evals/files/dashboard.html",
+      "script": "page-map.js",
+      "mustFlag": [
+        "SU-119",
+        "SU-121",
+        "SU-124",
+        "SU-125",
+        "SU-126",
+        "SU-127",
+        "SU-128",
+        "SU-129",
+        "SU-130",
+        "SU-132",
+        "SU-136"
+      ]
     },
-    { "name": "clean dashboard", "url": "fixtures/dashboard-good.html", "script": "audit.js", "maxFails": 0, "maxWarns": 0 },
-    { "name": "clean dashboard, export dialog open", "url": "fixtures/dashboard-good.html", "script": "audit.js", "open": "#export-btn", "maxFails": 0, "maxWarns": 0 },
-    { "name": "clean dashboard, alerts tab open", "url": "fixtures/dashboard-good.html", "script": "audit.js", "open": "#tab-alerts", "maxFails": 0, "maxWarns": 0 },
-    { "name": "clean dashboard page map", "url": "fixtures/dashboard-good.html", "script": "page-map.js", "maxWarns": 0 }
+    {
+      "name": "clean dashboard",
+      "url": "fixtures/dashboard-good.html",
+      "script": "audit.js",
+      "maxFails": 0,
+      "maxWarns": 0
+    },
+    {
+      "name": "clean dashboard, export dialog open",
+      "url": "fixtures/dashboard-good.html",
+      "script": "audit.js",
+      "open": "#export-btn",
+      "maxFails": 0,
+      "maxWarns": 0
+    },
+    {
+      "name": "clean dashboard, alerts tab open",
+      "url": "fixtures/dashboard-good.html",
+      "script": "audit.js",
+      "open": "#tab-alerts",
+      "maxFails": 0,
+      "maxWarns": 0
+    },
+    {
+      "name": "clean dashboard page map",
+      "url": "fixtures/dashboard-good.html",
+      "script": "page-map.js",
+      "maxWarns": 0
+    },
+    {
+      "name": "segmented picker, indicator 6px off its label + lopsided chip",
+      "url": "fixtures/segmented-bad.html",
+      "script": "audit.js",
+      "mustFail": [
+        "SU-137"
+      ],
+      "maxFails": 4
+    },
+    {
+      "name": "segmented picker, fixed",
+      "url": "fixtures/segmented-good.html",
+      "script": "audit.js",
+      "maxFails": 0,
+      "maxWarns": 0
+    }
   ]
 }

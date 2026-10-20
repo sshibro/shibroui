@@ -4,6 +4,29 @@ Runs used Claude Code subagents (Opus 5.5) with the skill installed. Triggering 
 from the run transcripts (Skill calls, reference files opened, script runs), not from the agents' own
 reports. There was one run per configuration, so small deltas are noise.
 
+## After v2: a missed segmented-control bug (SU-137)
+
+**The miss.** The user showed a day picker whose selected pill sat 6px right of its label. The skill
+missed it for two reasons:
+- There was no check for content centering, or for a selection highlight vs its item.
+- With only a screenshot there is no DOM, so the model eyeballed it, and vision misses offsets that
+  small.
+
+**The fixes:**
+- **`audit.js` SU-137:** content vs its container, and the highlight vs the selected item.
+- **`measure-png.py`:** screenshot measurement, stdlib only.
+- **`SKILL.md`:** a screenshot workflow.
+
+**Red/green.**
+- Before the fix, the audit reported 0 issues on a reproduction fixture (`tests/fixtures/segmented-bad.html`).
+- After it:
+  - The audit reports "selection highlight is 6.0px off-center (left 18px vs right 30px)" and
+    "label is 8.0px off-center" for a lopsided chip.
+  - The fixed fixture comes back clean.
+  - On the user's actual screenshot, `measure-png.py` reports "left 12px, right 25px → −6.5px FAIL, sits
+    6px closer to its right neighbour (44px vs 31px): likely a mispositioned highlight".
+  - The fixture screenshots pass through JPEG compression with the right answer (−5.6px vs a true 6px).
+
 ## Iteration 3: v2 (screen layer) vs v1
 
 **Why v2:** on complex screens v1 didn't check everything, and it only made component-level fixes, not

@@ -55,6 +55,7 @@ skill so Claude never sees answer keys while working.
 | `shibroui/references/checklist.md` | Screen-first self-check and review walk-through, with script-covered items marked |
 | `shibroui/scripts/page-map.js` | In-page expression. Returns the wireframe, hierarchy tiers, loud buttons, heading outline, system inventory with budget flags, alignment, rows/rhythm, nesting and hidden states |
 | `shibroui/scripts/audit.js` | In-page expression. Returns findings (fail / warn / info) with rule IDs and **every instance's CSS path**, plus `coverage`: what was checked, what was skipped and why, caps hit, and the hidden states still to audit |
+| `shibroui/scripts/measure-png.py` | Screenshot measurer (Python stdlib) for when there's no DOM. Finds pills, buttons, chips and cards, measures the ink inside them, and reports off-center content (SU-137), item gaps (including "likely a mispositioned highlight") and ink contrast. JPEG-tolerant; `--crop`, `--scale` |
 | `shibroui/scripts/contrast.mjs` | `node contrast.mjs <fg> <bg> [--fix] [--json] [--target 4.5]`: ratio, AA/AAA, and the nearest passing color in the same hue (OKLCH) |
 
 ### What the scripts measure
@@ -77,7 +78,7 @@ skill so Claude never sees answer keys while working.
   and overlap.
 - **Focus:** focus rings, painted when the page has focus and read from CSS when it doesn't.
 - **Tables:** numeric column alignment and tabular figures.
-- **Layout details:** control heights and nested radius.
+- **Layout details:** control heights, nested radius, and centered content (labels in pills, and selection highlights centered on their item).
 - **Text:** line length in `ch`, centered or justified prose, line height, and vague or
   non-underlined links.
 - **Forms:** unlabeled checkboxes, including inside hidden states.
@@ -88,11 +89,11 @@ skill so Claude never sees answer keys while working.
 ## Tests
 
 ```sh
-npm test                      # contrast.mjs unit tests (node:test)
+npm test                      # contrast.mjs + measure-png.py unit tests (node:test)
 python3 -m http.server 4399   # then open http://localhost:4399/tests/audit.html
 ```
 
-`tests/audit.html` runs 10 fixture checks in a hidden 1280×900 frame against
+`tests/audit.html` runs 12 fixture checks in a hidden 1280×900 frame against
 `tests/fixtures/expected.json`. Two broken pages (a settings page and a complex dashboard) must trip
 their planted rules in each opened state. Their clean counterparts must come back with zero fails and
 zero warnings from both scripts.

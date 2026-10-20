@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Segmented day picker (fixed)</title>
+<style>
+  body { margin: 0; padding: 32px; font-family: -apple-system, system-ui, sans-serif; background: #ffffff; color: #1f2937; }
+  :focus-visible { outline: 2px solid #7c3aed; outline-offset: 2px; }
+  .picker { position: relative; display: flex; align-items: center; gap: 8px; width: max-content; padding: 6px; border-radius: 40px; background: #ebedf0; }
+  .picker button { position: relative; z-index: 1; height: 68px; border: 0; background: none; font: inherit; font-size: 22px; color: #4b5563; cursor: pointer; }
+  .picker .step, .picker .cal { width: 56px; border-radius: 34px; }
+  .picker .day { padding: 0 24px; border-radius: 34px; }
+  .picker .day[aria-checked=true] { color: #6d28d9; font-weight: 600; }
+  .indicator { position: absolute; top: 6px; height: 68px; border-radius: 34px; background: #ffffff; box-shadow: 0 1px 3px rgb(0 0 0 / .12); }
+  .chip { display: inline-flex; align-items: center; height: 40px; margin-top: 24px; padding: 0 20px; border-radius: 20px; background: #ede9fe; color: #5b21b6; font-size: 16px; }
+</style>
+</head>
+<body>
+<div class="picker" role="radiogroup" aria-label="День">
+  <span class="indicator" aria-hidden="true"></span>
+  <button class="step" aria-label="Предыдущий день">‹</button>
+  <button class="day" role="radio" aria-checked="false">Вчера</button>
+  <button class="day" role="radio" aria-checked="true">Сегодня</button>
+  <button class="day" role="radio" aria-checked="false">Завтра</button>
+  <button class="step" aria-label="Следующий день">›</button>
+  <button class="cal" aria-label="Выбрать дату">📅</button>
+</div>
+<div><span class="chip">Фильтр: сегодня</span></div>
+<script>
+  const indicator = document.querySelector('.indicator');
+  const place = () => {
+    const selected = document.querySelector('.day[aria-checked=true]');
+    indicator.style.left = `${selected.offsetLeft}px`;
+    indicator.style.width = `${selected.offsetWidth}px`;
+  };
+  document.querySelectorAll('.day').forEach((day) => day.addEventListener('click', () => {
+    document.querySelectorAll('.day').forEach((d) => d.setAttribute('aria-checked', String(d === day)));
+    place();
+  }));
+  place();
+</script>
+</body>
+</html>

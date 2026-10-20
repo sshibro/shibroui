@@ -1,8 +1,8 @@
-# Layout & hierarchy (SU-18 – SU-39)
+# Layout & hierarchy (SU-18 – SU-39, SU-137)
 
 - [Spacing & sizing](#spacing--sizing) SU-18–23
 - [Visual hierarchy](#visual-hierarchy) SU-24–29
-- [Optical balance](#optical-balance) SU-30–39
+- [Optical balance](#optical-balance) SU-30–39, SU-137
 
 ## Spacing & sizing
 
@@ -175,3 +175,24 @@ Shared rule: **start geometrically, then correct what looks off.** Numbers are f
 - ❌ Thin and bold text in the same color: the thin text looks faint.
 - ✅ Thin text ~10% darker (on light surfaces) than the bold.
 - **Why:** thin strokes show less color, so compensate for equal emphasis.
+
+### SU-137 Centered content (labels in pills, highlights behind labels)
+**Rule:** content meant to be centered in a control is centered to within about 2px. A separately drawn
+selection highlight (a segmented-control or tab pill) is centered on the item it marks.
+- ❌ A selected-day pill drawn 6px right of "Today": 12px of space on the left, 24px on the right.
+- ❌ A chip with 12px / 28px inline padding and no icon.
+- ✅ Equal space on both sides, ±2px. The icon side gets about 4px less (SU-30).
+- ✅ The highlight takes its position and width from the selected item's own box.
+- **Why:** the eye compares the two sides of a short label instantly. A few pixels of imbalance read as
+  "broken", especially next to evenly spaced neighbours. It's also below what you'll reliably notice in
+  a screenshot by eye, so measure it.
+- **Do:**
+  - Use symmetric `padding-inline`.
+  - Position indicators from the item: `left = item.offsetLeft`, `width = item.offsetWidth`, or let the
+    selected item carry the background itself.
+  - Never add the container's gap or padding twice.
+  - Re-measure after the font loads (a bold selected label is wider than a regular one).
+- **Measure:**
+  - `audit.js`: SU-137 checks content vs container, and highlight vs selected item.
+  - `scripts/measure-png.py`: checks screenshots, and flags "likely a mispositioned highlight" when a pill
+    sits closer to one neighbour.

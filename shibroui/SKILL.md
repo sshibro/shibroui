@@ -1,6 +1,6 @@
 ---
 name: shibroui
-description: "shibroUI: this user's UI standard, from whole-screen layout down to single components. 136 rules with real numbers, a checklist and two in-page scripts: a page map (layout wireframe, focal point, hierarchy, type/color/spacing system, alignment, hidden states) and an audit (contrast, targets, focus, tables, forms, motion, every element and state). Covers layout patterns, grids, spacing rhythm, hierarchy, type scale, color and contrast, controls, 44px targets, focus, motion, radius, elevation, images and empty states. Use it whenever you create, change, polish or review UI code (HTML/CSS, Tailwind, React, Vue, Svelte): whole pages, dashboards, settings, forms, tables, modals or animations, and whenever the user wants a UI/UX review, says a screen looks off, cluttered or amateur, or wants better layout, hierarchy or overall look, even if shibroUI is not named. Its numbers can differ from generic advice, so also consult it for quick UI questions (contrast, line length, spacing, hit size, radius, duration)."
+description: "shibroUI: this user's UI standard, from whole-screen layout down to components. 137 rules with real numbers, a checklist and tools: a page map (wireframe, focal point, hierarchy, type/color/spacing system, alignment, hidden states), an audit (contrast, targets, focus, centering, tables, forms, motion, every element and state) and a screenshot measurer for when there's no code. Covers layout, grids, spacing rhythm, hierarchy, type, color and contrast, controls, targets, focus, motion, radius, elevation and empty states. Use it whenever you create, change, polish or review UI code (HTML/CSS, Tailwind, React, Vue, Svelte) or a UI screenshot: pages, dashboards, forms, tables, modals, segmented controls or animations, and whenever the user says a screen looks off, misaligned, cluttered or amateur, or wants better layout, hierarchy or overall look, even if shibroUI is not named. Its numbers can differ from generic advice, so consult it for quick UI questions too."
 ---
 
 # shibroUI
@@ -17,8 +17,8 @@ most carry the numbers that separate bad from good.
   - every state reviewed.
 
   This is where "cluttered", "looks off" and "amateur" come from.
-- **Component** (`SU-1`–`SU-118`) covers type, spacing, hierarchy, color, forms, targets, focus, motion,
-  surfaces and product details.
+- **Component** (`SU-1`–`SU-118`, plus `SU-137` centering) covers type, spacing, hierarchy, color, forms,
+  targets, focus, motion, surfaces and product details.
 
 Work top-down. Fixing a button's contrast doesn't fix a screen whose layout and hierarchy are
 wrong, and polishing components on a broken structure is the most common way to "help" without
@@ -31,6 +31,7 @@ helping.
   this dashboard look better").
 - **Single component or tweak** (a button, a modal, one animation): use the component workflow.
 - **Quick question**: answer from the defaults table, and cite the rule ID.
+- **Screenshot only** (no code at hand): use the screenshot workflow below. Measure first, then judge.
 
 ## Screen workflow (build, redesign or review)
 
@@ -97,6 +98,26 @@ helping.
    `audit.js` once per state, fix, then one confirming run. Don't loop the audit to chase info items.
 5. **Name the rules behind key decisions** in one line of your final message.
 
+## Screenshot workflow (no code at hand)
+
+Vision alone reliably misses offsets under about 8px. A pill drawn 6px off its label looks "fine" at a
+glance and wrong to the user. So measure before you judge:
+
+1. **If the code exists, get it and render it.** DOM truth beats pixels: run `page-map.js` and
+   `audit.js` as usual.
+2. **Otherwise measure the pixels.** Run `python3 scripts/measure-png.py shot.png [--crop x,y,w,h]
+   [--scale 2]` (stdlib only). It:
+   - finds filled containers (pills, buttons, chips, tracks, cards) and the ink inside each;
+   - reports content that sits off-center (SU-137);
+   - reports the gaps between items in a row, and says when a nested pill sits closer to one
+     neighbour (a mispositioned highlight);
+   - reports ink contrast against the fill.
+
+   Crop to the component. Pass `--scale` for retina screenshots (usually 2 on a Mac) to get CSS px.
+3. **Then do the visual read** (hierarchy, grouping, consistency) and cite the measured numbers.
+   Redundant or confusing controls (e.g. chevrons *and* yesterday/tomorrow tabs doing the same job)
+   are judgment calls the tools won't make, so look for them.
+
 ## Finding format (reviews)
 
 ```
@@ -140,6 +161,7 @@ Use these unless the project's system says otherwise. The "why" lives in the ref
 | Focus | `:focus-visible { outline: 2px solid <accent>; outline-offset: 2px }` (SU-70) |
 | Press | `:active { transform: scale(0.97) }` about 200ms (SU-72) |
 | Motion | Micro 100–200ms, panels 250–350ms, nothing routine over 500ms. Ease-out enter, ease-in exit. Interruptible transitions. Reduced-motion fallback (SU-75–85) |
+| Centering | Labels centered in pills, buttons and chips (±2px; icon side ~4px less). Selection highlights take position and width from the selected item (SU-137) |
 | Nested corners | inner radius = max(0, outer − padding) (SU-93) |
 | Elevation | Base 0 · dropdown 2 · raised card 3 · toast/modal 5 + scrim (SU-99–103) |
 | Images | Fixed `aspect-ratio` + `object-fit: cover`. 1px inner outline at ~10% (SU-106–107) |
@@ -151,7 +173,7 @@ Use these unless the project's system says otherwise. The "why" lives in the ref
 |---|---|---|
 | [references/composition.md](references/composition.md) | SU-119–136 | any whole screen: layout, grid, alignment, rhythm, hierarchy, system budgets, patterns, states |
 | [references/typography.md](references/typography.md) | SU-1–17 | type sizes, fonts, line height, links, wrapping, numbers, tables |
-| [references/layout-hierarchy.md](references/layout-hierarchy.md) | SU-18–39 | component spacing, widths, grouping, emphasis, buttons, optical fixes |
+| [references/layout-hierarchy.md](references/layout-hierarchy.md) | SU-18–39, 137 | component spacing, widths, grouping, emphasis, buttons, optical fixes, centering and highlights |
 | [references/color.md](references/color.md) | SU-40–49 | palettes, shades, tints, charts, contrast, badges, text over images |
 | [references/forms.md](references/forms.md) | SU-50–60 | checkboxes, labels, form buttons, selects, sliders, control heights |
 | [references/accessibility.md](references/accessibility.md) | SU-61–71 | hit areas, icon/close buttons, focus rings, status |
@@ -177,6 +199,8 @@ also sets `window.__shibroAuditResult` / `window.__shibroPageMapResult`.
   `coverage.checked` / `skipped` / `capsHit` show what was and wasn't measured. `coverage.hiddenStates`
   is your to-do list of states to open and re-run. With a modal open it audits only the modal. On
   very large pages, scope with `window.__shibroAudit = { root: '<region selector>' }` and run per region.
+- **`measure-png.py`**: for screenshots when there's no DOM (see the screenshot workflow). It measures
+  pixels rather than CSS, so pass `--scale` and crop to the component.
 - `fail` = clearly broken. `warn` = likely, so check it. `info` = look yourself. Never claim a script
   passed if you didn't run it. If no browser is available, say so and use the checklist plus
   `contrast.mjs`.

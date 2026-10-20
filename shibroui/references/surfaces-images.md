@@ -37,6 +37,9 @@ soft, broad shadow with a tight edge shadow.
 
 On dark themes, shadows read weakly, so pair elevation with a slightly lighter surface for each level. See SU-164.
 
+Resting and raised cards use a border **or** a short shadow, not a hairline plus a large blur; floating
+layers (menus, popovers, dialogs, toasts) may combine both. Shadow craft (layers, tint, alpha) is SU-253.
+
 **Stacking order** follows the same levels: base `0` · sticky `100` · dropdown `200` · scrim `300` · modal `400` ·
 toast `500` · tooltip `600`. Keep these as tokens and never reach for `9999`. Overlays in the top layer
 (`<dialog>` with `showModal()`, `popover`) need no `z-index` at all.

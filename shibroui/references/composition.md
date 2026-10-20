@@ -1,4 +1,4 @@
-# Screen composition (SU-119 – SU-136)
+# Screen composition (SU-119 – SU-136, SU-265)
 
 Component rules (SU-1–118) make each piece right. These rules make the *screen* right: what reads
 first, how regions are laid out, how space separates groups, and whether the whole thing looks like one
@@ -12,7 +12,8 @@ polishing components. `scripts/page-map.js` measures most of them.
 - [One visual system](#one-visual-system) SU-126–128
 - [Containers, rows and chrome](#containers-rows-and-chrome) SU-130, SU-132, SU-134
 - [Responsive and states](#responsive-and-states) SU-133, SU-135, SU-136
-- [Layout patterns](#layout-patterns): dashboard, settings, list/detail, data table, form, landing
+- [Layout patterns](#layout-patterns): in [patterns.md](patterns.md)
+- [Across screens](#across-screens) SU-265
 
 ## Read the screen first
 
@@ -48,7 +49,7 @@ neutral) or tertiary (text).
 ## Layout structure
 
 ### SU-122 Pick the layout pattern for the task
-**Rule:** start from a known pattern (see [Layout patterns](#layout-patterns)), then adapt it. Don't
+**Rule:** start from a known pattern (see [patterns.md](patterns.md)), then adapt it. Don't
 invent a structure per screen.
 - **Why:** patterns encode reading order and density that users already know. A dashboard, a
   settings page and a landing page have different jobs and different shapes.
@@ -173,7 +174,9 @@ titles, numbers with numbers, actions with actions).
 **Rule:** navigation, toolbars and filters are quieter than content.
 - **Location:** the current location is always marked (SU-26).
 - **Primary nav:** shows at most about 7 items.
-- **Overflow:** rare actions move into a "More" menu.
+- **Overflow:** rare actions move into a "More" menu. A page header shows the title, the primary action and
+  at most two secondary actions; Export, Print and other occasional actions go in "More" (`⋯`, named).
+- **Measure (header actions):** `audit.js` SU-134 (info): a page-header row with the `h1` and more than 3 buttons.
 - **Header height:** 56–64px for app headers. Don't stack banner + toolbar + filter bar above the content.
 
 ## Responsive and states
@@ -197,53 +200,21 @@ dialogs, sheets, empty, loading and error states.
 
 ## Layout patterns
 
-Starting points. Adapt them, but keep their reading order.
+The starting patterns (dashboard, settings, list/detail, data table admin, form, landing) and the page
+patterns for marketing, pricing and docs live in [patterns.md](patterns.md).
 
-**Dashboard** (job: see status, spot problems, act)
-```
-+----------------------------------------------------------------+
-| Page title                           [Secondary] [Primary CTA] |
-| KPI | KPI | KPI | KPI          (equal peers, neutral surfaces) |
-| Primary chart / main insight (2/3)       | Alerts / to-do (1/3)|
-| Detail table (full width, right-aligned numbers)               |
-+----------------------------------------------------------------+
-```
-Section gap 32px, card gap 24px. KPIs are peers: same style, neutral backgrounds, with color only on
-deltas and status.
+## Across screens
 
-**Settings** (job: find and change one thing)
-```
-+---------------+------------------------------------------------+
-| Side nav      | Section title                                  |
-| (240px fixed) | One-line description                           |
-| • General     | ------------------------------------------------ |
-| • Members     | Label           [ control             ]        |
-| • Billing     | Label           [ control ]                    |
-| • Danger zone | [Save] (one primary per section)               |
-+---------------+------------------------------------------------+
-```
-Or stacked sections at a 640–720px width, each with an `h2` and a description. The danger zone goes
-last and is visually separated.
-
-**List / detail**
-```
-+--------------------+-------------------------------------------+
-| Search + filter    | Detail title               [Primary]      |
-| Row  (selected)    | Key facts (label/value grid)              |
-| Row                | Body / activity                           |
-| Row                |                                           |
-+--------------------+-------------------------------------------+
-```
-The list is 320–400px wide and the selected row is clearly marked.
-
-**Data table admin**
-- Page header with the title and a primary action.
-- A single filter bar with search plus 2–3 filters, and the rest behind "More filters".
-- A table with sticky headers, right-aligned numbers and row actions in the last column.
-- Pagination or a count under the table.
-
-**Form**: a single 480–640px column, label above field, groups with `h2`s, and the primary action
-at the end, aligned with the fields. Keep long forms in sections, not columns.
-
-**Landing**: hero (one message + one CTA) → proof (logos/metrics) → 3–4 features → testimonial →
-final CTA. Sections are separated by 64–128px.
+### SU-265 One system across screens
+**Rule:** the same role looks the same on every route. One page-header pattern, one set of tokens, and no
+value (font size, color, radius, shadow, control height) that only one route uses: promote it to a token
+or remove it.
+- ❌ Billing has a second button style and a 13px size; Reports builds its page header as a split while
+  every other route stacks title and action.
+- ✅ Every route's page header has the same fingerprint, and the union of values across routes stays in
+  the SU-126–128 budgets.
+- **Why:** budgets are checked per screen, but products drift *between* screens, one exception at a
+  time.
+- **Measure:** save each route's page map (or `scripts/scan.mjs` output) and run
+  `node scripts/compare-maps.mjs a.json b.json …`: it lists values used on only one route, page headers
+  built differently, and the union against the budgets.

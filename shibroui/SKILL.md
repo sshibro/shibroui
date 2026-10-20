@@ -1,6 +1,6 @@
 ---
 name: shibroui
-description: "Numeric UI rules (shibroUI, 203 rules) for building, reviewing and answering questions about web interfaces, from whole-screen layout down to single components. Use it when writing or changing HTML/CSS/Tailwind/React/Vue/Svelte UI or reviewing a UI screenshot; when a screen looks off, misaligned, cluttered or amateur; and for quick design-value questions: body text max-width and line-height, type scale, contrast ratio, tap target size, spacing, radius, shadow, animation duration, focus rings, dark mode colors, form validation and error messages, loading and empty states, accessible names, responsive and mobile layout, RTL. Consult it before answering UI sizing, spacing, color or motion questions from memory: its numbers differ from generic advice. Ships a page map, an in-page audit (contrast, targets, focus, semantics, forms, reflow, states, motion, every state) and a screenshot measurer. Chart construction belongs to the dataviz skill."
+description: "Numeric UI rules (shibroUI, 265 rules) for building, reviewing and answering questions about web interfaces, from whole pages to single components. Use it when writing or changing HTML/CSS/Tailwind/React/Vue/Svelte UI or reviewing a UI screenshot; when a screen looks off, cluttered or amateur; for landing pages and long pages, data tables, menus, dialogs, tooltips, navigation, pricing, hover and selected states, shadows, gradients and icons; and for quick design-value questions: text width and line-height, type scale, contrast, tap targets, spacing, radius, shadow, animation timing, focus rings, dark mode, form errors, loading and empty states, responsive layout, RTL. Consult it before answering UI sizing, spacing, color or motion questions from memory: its numbers differ from generic advice. Chart construction belongs to the dataviz skill."
 ---
 
 # shibroUI
@@ -17,8 +17,16 @@ most carry the numbers that separate bad from good.
   - every state reviewed.
 
   This is where "cluttered", "looks off" and "amateur" come from.
+- **Long pages and page patterns** (`SU-204`–`SU-221`, [long-pages.md](references/long-pages.md),
+  [patterns.md](references/patterns.md)): a page read one screen-height band at a time, landing, pricing,
+  docs and article pages.
 - **Component** (`SU-1`–`SU-118`, plus `SU-137` centering and `SU-203` control rows) covers type, spacing,
   hierarchy, color, forms, targets, focus, motion, surfaces and product details.
+- **Component specs and states** (`SU-222`–`SU-252`): tables, navigation, menus, tooltips, dialogs,
+  drawers, toasts, inputs, avatars and chips, and the interaction-state matrix (hover, pressed, selected,
+  disabled).
+- **Craft** (`SU-253`–`SU-264`, [craft.md](references/craft.md)): what excellent looks like, with
+  numbers: layered and tinted shadows, hairlines, gradients, icons, display type, imagery, finishes.
 - **Behavior and access** (`SU-138`–`SU-202`) covers what the screen does and where it must work:
   semantics and keyboard, validation, loading/error/success states, theming and dark mode, responsive and
   touch, microcopy, charts, loading performance, and other languages and directions.
@@ -32,6 +40,8 @@ helping.
 - **Whole screen** (a page, dashboard, settings, form, or anything the user calls cluttered, off or
   hard to use): use the screen workflow. Most real requests are this, even when phrased small ("make
   this dashboard look better").
+- **Long page** (3+ screens tall: a landing page, docs, an article, a catalog, a long settings page): the
+  screen workflow in **band mode** (below). Never judge a long page from one screenshot.
 - **Single component or tweak** (a button, a modal, one animation): use the component workflow.
 - **Quick question**: answer from the defaults table, and cite the rule ID.
 - **Screenshot only** (no code at hand): use the screenshot workflow below. Measure first, then judge.
@@ -39,6 +49,9 @@ helping.
 ## Screen workflow (build, redesign or review)
 
 1. **Read the screen before touching it.**
+   - Load the scripts instead of pasting them (see "Running the scripts"). With Playwright available,
+     `node scripts/scan.mjs <url> --out <dir>` does this step's measuring in one call: both scripts at 1280 and
+     375, with the scroll sweep, and one screenshot per band.
    - Render it and take screenshots at 1280×900 and 375 wide. Run `audit.js` once at 320×640 too:
      reflow (SU-170) is only measured at widths of 400px or less.
    - Run `scripts/page-map.js`, which returns a text wireframe of the regions, what reads first, loud
@@ -53,6 +66,13 @@ helping.
      - the states to visit: the hidden ones (tabs, menus, dialogs) and the data states of each region
        (empty, loading, error, success; SU-155).
    - When building from scratch, write the read for the screen you're about to build.
+   - **Band mode (long pages).** Run both scripts with `prepare: true` (scroll reveals and lazy sections
+     are invisible until scrolled; without it the run reports how much it couldn't see in
+     `coverage.unseen`). Read page-map's `outline`, then take one screenshot per band (scroll to
+     `bands[n].y`). Replace the screen read with a **page read**: the job; the story in band order, one
+     line per band; the primary action and where it repeats; bands doing the same job (merge them); the
+     states. With 8+ bands, up to 4 subagents may each review a range of bands with the same tokens and
+     finding format, and you merge by root cause.
 2. **Plan the composition** with [references/composition.md](references/composition.md) open.
    - Pick the layout pattern.
    - Draw the target structure as an ASCII wireframe, regions in priority order.
@@ -98,15 +118,21 @@ helping.
 
 1. **The user's explicit spec wins.** If they ask for 6 rows, ship 6 rows. The rules shape *how*, not
    *what*. Mention any trade-off in one line.
-2. **Apply the defaults below.** Open only the one to three reference files the work touches (a table →
+2. **Write the spec, then a specimen** for anything reusable (a button, select, tab bar, table, menu): the
+   anatomy, sizes (SU-239), the state matrix (SU-248), content limits, the APG pattern, motion and tokens,
+   then one page with every variant × size × state in both schemes plus long text and `dir="rtl"`. Force
+   states with `data-state`/`aria-*` or `.is-hover`/`.is-active` mirror classes so the audit sees them.
+   Specs for common components are in `references/components-*.md`.
+3. **Apply the defaults below.** Open only the one to three reference files the work touches (a table →
    `typography.md`; a form → `forms.md` + `semantics.md`; a modal with motion →
    `surfaces-images.md` + `motion.md`; a dark theme → `theming.md`; a loading or error state →
    `states.md`).
-3. **Fit the project's tokens.** The rules are relationships (label gap smaller than field gap, inner
+4. **Fit the project's tokens.** The rules are relationships (label gap smaller than field gap, inner
    radius = outer − padding) that hold in any token set.
-4. **Verify:** `node scripts/contrast.mjs <fg> <bg> [--fix]` for any doubtful color pair, plus
-   `audit.js` once per state, fix, then one confirming run. Don't loop the audit to chase info items.
-5. **Name the rules behind key decisions** in one line of your final message.
+5. **Verify:** `node scripts/contrast.mjs <fg> <bg> [--fix]` for any doubtful color pair, plus
+   `audit.js` on the specimen and once per state on the real screen, fix, then one confirming run. Don't
+   loop the audit to chase info items.
+6. **Name the rules behind key decisions** in one line of your final message.
 
 ## Screenshot workflow (no code at hand)
 
@@ -186,12 +212,21 @@ Use these unless the project's system says otherwise. The "why" lives in the ref
 | Charts | Title states the takeaway. Series ≥ 3:1 and not color-only. Text ≥ 12px. Named, with a table view. Construction → dataviz skill (SU-185–191) |
 | Loading | Media sized (width/height or aspect-ratio), `font-display` set, hero image not lazy, only transform/opacity animate (SU-192–196) |
 | Languages | Logical properties and `dir`. Labels grow (+40%, short strings ×2–3). Truncation always revealable, never on actions or errors. `Intl` formatting (SU-197–202) |
+| Long pages | One lead per band; ≤ 2 identical section layouts in a row; one primary CTA label, repeated; sticky header ≤ 64px (72 marketing) with `scroll-margin-top`; TOC on long reads, "Back to top" past 4 screens; reveals never hide content (SU-204–211) |
+| Page patterns | Hero: ≤ ~10-word headline, ≤ 2 CTAs, the product in view. Pricing: 3–4 equal-height plans, recommended marked by text and border. Space above a heading ≈ 1.5–2× below (SU-212–221) |
+| Control sizes | sm 32 · md 40 · lg 48px tall; text 13–14 / 14–16 / 16; icons 16 / 16–20 / 20–24; inline padding 12 / 16 / 20 (SU-239) |
+| Components | Page header: title + primary + ≤ 2 secondary, the rest in "More". Table rows 32/40/48, sticky header and first column, stacked rows on phones; menus 32–40px items, 160–288px wide, ≤ 12 items; tooltips ≤ ~75 chars, never on disabled; dialogs ~400/600/960px, ≤ 90vh; side panels 320–480; toasts in one corner, ≤ 3 (SU-222–247) |
+| Interaction states | Design every state; states change paint, not layout (reserve bold width); every state keeps 4.5:1; selected is obvious without color; disabled says why (SU-248–252) |
+| Craft | Layered, tinted shadows (black ≤ 0.25); alpha hairlines; gradients `in oklch`; one icon family and stroke, icons 1–1.25× text; display type −0.02 to −0.04em, leading 1.0–1.1; crisp 2× product shots (SU-253–264) |
+| Across routes | One page-header pattern, one set of tokens, no value used on only one route (SU-265) |
 
 ## Rule map
 
 | File | Rules | Open when… |
 |---|---|---|
-| [references/composition.md](references/composition.md) | SU-119–136 | any whole screen: layout, grid, alignment, rhythm, hierarchy, system budgets, patterns, states |
+| [references/composition.md](references/composition.md) | SU-119–136, 265 | any whole screen: layout, grid, alignment, rhythm, hierarchy, system budgets, states, consistency across routes |
+| [references/long-pages.md](references/long-pages.md) | SU-204–211 | pages of 3+ screens: bands, section variety, false floor, sticky header and anchors, repeated CTA, scroll reveals |
+| [references/patterns.md](references/patterns.md) | SU-212–221 | layout patterns (dashboard, settings, list/detail, table, form, landing), hero, proof, features, bento, pricing, FAQ, footer, articles, code blocks |
 | [references/typography.md](references/typography.md) | SU-1–17 | type sizes, fonts, line height, links, wrapping, numbers, tables |
 | [references/layout-hierarchy.md](references/layout-hierarchy.md) | SU-18–39, 137, 203 | component spacing, widths, grouping, emphasis, buttons, optical fixes, centering, highlights, control rows |
 | [references/color.md](references/color.md) | SU-40–49 | palettes, shades, tints, charts, contrast, badges, text over images |
@@ -208,6 +243,12 @@ Use these unless the project's system says otherwise. The "why" lives in the ref
 | [references/dataviz.md](references/dataviz.md) | SU-185–191 | charts inside a screen: takeaway titles, honest scales, mark contrast, chart text, text alternatives |
 | [references/performance.md](references/performance.md) | SU-192–196 | layout shift, fonts, hero images, long lists, layout-property animation |
 | [references/international.md](references/international.md) | SU-197–202 | RTL, mirroring, text expansion, truncation, script-aware type, Intl formatting |
+| [references/components-data.md](references/components-data.md) | SU-222–227 | data tables, row actions, pagination, filters |
+| [references/components-navigation.md](references/components-navigation.md) | SU-228–232 | sidebar, top nav and mega menus, tabs, breadcrumbs, command palette |
+| [references/components-overlays.md](references/components-overlays.md) | SU-233–238 | menus, tooltips, popovers, dialogs, side panels, toasts |
+| [references/components-inputs.md](references/components-inputs.md) | SU-239–247 | control sizes, the component spec and specimen, switches, choosing a control, dates, upload, search, avatars, chips, shortcuts |
+| [references/interaction.md](references/interaction.md) | SU-248–252 | hover, pressed, selected, disabled and read-only states |
+| [references/craft.md](references/craft.md) | SU-253–264 | shadows, hairlines, gradients, icons, neutrals, display type, imagery, logos, glows, whitespace, finishes |
 | [references/checklist.md](references/checklist.md) | all | final self-check and reviews |
 
 ## Running the scripts
@@ -215,8 +256,21 @@ Use these unless the project's system says otherwise. The "why" lives in the ref
 Both scripts are single JavaScript expressions to evaluate in the rendered page. Each returns JSON and
 also sets `window.__shibroAuditResult` / `window.__shibroPageMapResult`.
 
-- **Built-in or Chrome browser tools:** pass the file contents to the JavaScript tool. **Playwright MCP:**
-  `browser_evaluate` with `() => <file contents>`.
+- **Load them; don't paste them.** `audit.js` is about 40k tokens. Start `node scripts/serve.mjs` once
+  in the background, then run one line in the page:
+  `await fetch('http://127.0.0.1:4399/audit.js').then((r) => r.text()).then((s) => (0, eval)(s))` (same for
+  `page-map.js`). Set options in the same call: `window.__shibroAudit = { prepare: true }; await fetch(…)`.
+  Paste the file contents only when the page's CSP blocks the fetch or `eval` (the loader throws a CSP
+  error). **Playwright MCP:** `browser_evaluate` with the same async function.
+- **Headless:** `node scripts/scan.mjs <url> [--widths 1280,375] [--out dir]` runs both scripts with the
+  sweep and saves `band-NN.png` screenshots and the JSON per width (needs `playwright-core`).
+- **`prepare: true`** (both scripts) scrolls the page once before measuring and makes the result a
+  Promise. Use it on every long page; `coverage.unseen` says what was still hidden.
+- **`band: n`** (audit) scopes to page-map's band `n`. **Root-cause findings** (`rootCause: true`) are one
+  fix for every group listed in `groups`. When `instancesSampled` is set, `instances` is a sample of
+  `count`: fix the pattern.
+- **Across routes:** save each route's page map and run `node scripts/compare-maps.mjs a.json b.json …`
+  for values used on only one route (SU-265).
 - **Serve the page over local HTTP** (tools refuse `file://`), **use a real viewport** (a hidden pane
   is 0×0, and both scripts return an `error` saying so), and **open your own tab** (other agents may share
   the browser).
@@ -242,13 +296,16 @@ shibroUI is the numbers and measurement authority. For these, follow the special
 shibroUI's checks:
 - chart form, palette and marks → **dataviz**;
 - gesture physics, springs and materials → **apple-design**;
-- aesthetic direction and brand look → **frontend-design**;
+- aesthetic direction and brand look → **frontend-design** (shibroUI still owns the craft numbers,
+  SU-253–264, and measures them);
 - a sweep for generated-UI tells → **impeccable**.
 
 ## Judgment notes
 
 - **Structure before polish.** If page-map flags the focal point, primary actions, budgets, alignment or
   nesting, the screen needs restructuring. Recoloring a few buttons won't fix it.
+- **A long page is many screens.** Each band needs a lead and a reason to exist; three identical bands in
+  a row are a template, not a story. Read the outline before any band.
 - **Ranges, not points.** Aim for "ideal", accept "acceptable", never ship either extreme (30ch and 92ch
   are both wrong).
 - **Don't over-apply.** Underlines are for inline content links. `user-select: none` is for option

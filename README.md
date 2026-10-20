@@ -12,7 +12,7 @@ results are in [`evals/RESULTS.md`](evals/RESULTS.md).
 ## Install
 
 ```sh
-git clone <this repo> ~/Developer/shibroui
+git clone https://github.com/sshibro/shibroui.git ~/Developer/shibroui
 ln -s ~/Developer/shibroui/shibroui ~/.claude/skills/shibroui
 ```
 

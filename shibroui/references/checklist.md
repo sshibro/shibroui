@@ -256,3 +256,18 @@ apply.
 ## Pixel alignment
 - [ ] Control rows: equal gaps, symmetric flanks, selected pill inset equally **[audit]** **[png: gaps]** (SU-203)
 - [ ] Mixed-size text in a row shares a baseline **[audit]** (SU-4)
+
+## Page types (open the matching file; SU-266–361)
+- [ ] Catalog: count, named default sort, filter rail with counts; Load more with "Showing N of M"; prices with one saving and struck price ≥ 4.5:1 (SU-266–268)
+- [ ] Product page: variants with a 2px ring + check and sold-out struck; gallery strip; delivery, shipping and returns above the fold; sticky add-to-cart only after the button leaves; reviews filterable (SU-269–273)
+- [ ] Cart and checkout: lines carry image, variant, price, Undo; real total before checkout; guest first; ≈ 12 form elements; delivery dates; protected Place order; confirmation names the order (SU-274–282)
+- [ ] Sign-in and recovery: one 360-400px column; neutral errors; passwords by length; resets leak nothing; codes show expiry and resend cooldown; passkeys keep a fallback; sessions warn before they end (SU-283–288)
+- [ ] Account and billing: save per section; danger zone last with proportionate friction; topics × channels preferences; revocable sessions and keys; billing shows next charge; cancelling is as easy as signing up (SU-289–295)
+- [ ] Content and help: one index pattern; complete byline; article endings hand on; docs shell widths; four callout types; help articles end with feedback; legal pages dated; email signup says how often (SU-296–305)
+- [ ] Display and media: carousels ≤ 5 slides with pause and 44px controls; 48px accordion rows; key-value lists; ratings as text; timelines by day; badges hide at 0; lightboxes; video controls; KPI tiles with named comparisons (SU-306–315)
+- [ ] Advanced inputs: right keyboard per field; nothing hidden by the keyboard; counters never block; phone fields without masks; steppers, sliders, range calendars, tokens, inline edit and rich-text toolbars to spec (SU-316–325)
+- [ ] Feedback and system pages: one message type per job; "Copied" in place; autosave states; offline keeps content; 404/500/401/403/429 say what next; live data shows freshness; surveys appear once, late and small (SU-326–334)
+- [ ] App patterns: onboarding ≤ 3 questions; tours 3-5 steps; permission pre-prompts; capped bell counts; grouped notification panel; one relative-time ladder (SU-335–340)
+- [ ] Collaboration: chat groups and scroll anchoring; growing composers with drafts; 2-level comments; slot pickers in the viewer's zone; bookings with both zones; uploads with crop; bulk bars; reordering with keyboard and menu (SU-341–348)
+- [ ] Search and navigation: results restate query and count; no-results recovers; autocomplete ≤ 10 rows; pagination with first and last; back links name the place; native language names; fixed account menu (SU-349–355)
+- [ ] Consent and trust: Reject equals Accept; reopenable preference centre; no dark patterns; popups wait and stay clear; separate unticked sign-up consents; links say when they leave, download, call or write (SU-356–361)

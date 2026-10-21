@@ -18,6 +18,12 @@ A Claude Code skill of interface foundations at two levels:
 - **Craft** (`SU-253`–`SU-264`): layered and tinted shadows, hairlines, OKLCH gradients, one icon system,
   display type, crisp product imagery, balanced logos and the small finishes.
 - **Across routes** (`SU-265`): one system on every screen.
+- **Page types and their components** (`SU-266`–`SU-361`): commerce listings and product pages, cart and
+  checkout, sign-in and recovery, account and billing, content, docs and help, display components and media,
+  advanced inputs, feedback and system pages, app patterns (onboarding, notifications, chat, scheduling,
+  files), search and navigation, and consent and trust. Each rule was drafted, rendered as a bad/good
+  specimen and reviewed against its sources; house defaults are labelled. Most are checked by hand for
+  now: their Measure lines name the planned audit check.
 
 It comes with a checklist, a WCAG contrast tool, two in-page scripts and three helpers. The **page map** reads a
 screen's structure and visual system, and on long pages splits it into bands. The **audit** measures every
@@ -71,6 +77,7 @@ skill so Claude never sees answer keys while working.
 | `shibroui/scripts/page-map.js` | In-page expression. Returns the wireframe, hierarchy tiers, loud buttons, heading outline, system inventory with budget flags, alignment, rows/rhythm, nesting and hidden states |
 | `shibroui/scripts/audit.js` | In-page expression. Returns findings (fail / warn / info) with rule IDs and **every instance's CSS path**, plus `coverage`: what was checked, what was skipped and why, caps hit, and the hidden states still to audit |
 | `shibroui/scripts/measure-png.py` | Screenshot measurer (Python stdlib) for when there's no DOM. Finds pills, buttons, chips and cards, measures the ink inside them, and reports off-center content (SU-137), item gaps (including "likely a mispositioned highlight") and ink contrast. JPEG-tolerant; `--crop`, `--scale` |
+| `shibroui/references/commerce-*.md`, `auth.md`, `account-billing.md`, `content-help.md`, `display-components.md`, `inputs-advanced.md`, `feedback-system.md`, `app-*.md`, `search-navigation.md`, `consent-trust.md` | The v0.5 page-type layers (SU-266–361), one file per kind of page |
 | `shibroui/references/long-pages.md`, `patterns.md`, `components-*.md`, `interaction.md`, `craft.md` | The v0.4 layers: long pages (SU-204–211), page patterns (SU-212–221), component specs (SU-222–247), interaction states (SU-248–252), craft (SU-253–264) |
 | `shibroui/scripts/serve.mjs` | Serves `audit.js` and `page-map.js` on `127.0.0.1:4399` (CORS) so a browser tool loads them with `await fetch(…).then((r) => r.text()).then((s) => (0, eval)(s))` |
 | `shibroui/scripts/scan.mjs` | Headless (Playwright) scan: both scripts at 1280 and 375 with the scroll sweep, JSON reports and one screenshot per band |

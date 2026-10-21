@@ -1,6 +1,6 @@
 ---
 name: shibroui
-description: "Numeric UI rules (shibroUI, 265 rules) for building, reviewing and answering questions about web interfaces, from whole pages to single components. Use it when writing or changing HTML/CSS/Tailwind/React/Vue/Svelte UI or reviewing a UI screenshot; when a screen looks off, cluttered or amateur; for landing pages and long pages, data tables, menus, dialogs, tooltips, navigation, pricing, hover and selected states, shadows, gradients and icons; and for quick design-value questions: text width and line-height, type scale, contrast, tap targets, spacing, radius, shadow, animation timing, focus rings, dark mode, form errors, loading and empty states, responsive layout, RTL. Consult it before answering UI sizing, spacing, color or motion questions from memory: its numbers differ from generic advice. Chart construction belongs to the dataviz skill."
+description: "Numeric UI rules (shibroUI, 361 rules) for building, reviewing and answering questions about web interfaces, from whole pages to single components. Use it when writing or changing HTML/CSS/Tailwind/React/Vue/Svelte UI or reviewing a UI screenshot; when a screen looks off, cluttered or amateur; for landing, product, cart, checkout, sign-in, settings, billing, docs, help, search and error pages, dashboards, onboarding, notifications and chat; for tables, menus, dialogs, carousels, galleries, cookie banners and pricing; and for quick values: text width, line-height, type scale, contrast, targets, spacing, radius, shadow, timing, focus, dark mode, form errors, loading and empty states, responsive, RTL. Consult it before answering UI sizing, spacing, color or motion questions from memory: its numbers differ from generic advice. Chart construction belongs to the dataviz skill."
 ---
 
 # shibroUI
@@ -27,6 +27,10 @@ most carry the numbers that separate bad from good.
   disabled).
 - **Craft** (`SU-253`–`SU-264`, [craft.md](references/craft.md)): what excellent looks like, with
   numbers: layered and tinted shadows, hairlines, gradients, icons, display type, imagery, finishes.
+- **Page types and their components** (`SU-266`–`SU-361`): commerce listings and product pages, cart and
+  checkout, sign-in and recovery, account and billing, content, docs and help, display components and
+  media, advanced inputs, feedback and system pages, app patterns, search and navigation, consent and
+  trust. Open the one file that matches the page you're building.
 - **Behavior and access** (`SU-138`–`SU-202`) covers what the screen does and where it must work:
   semantics and keyboard, validation, loading/error/success states, theming and dark mode, responsive and
   touch, microcopy, charts, loading performance, and other languages and directions.
@@ -219,6 +223,14 @@ Use these unless the project's system says otherwise. The "why" lives in the ref
 | Interaction states | Design every state; states change paint, not layout (reserve bold width); every state keeps 4.5:1; selected is obvious without color; disabled says why (SU-248–252) |
 | Craft | Layered, tinted shadows (black ≤ 0.25); alpha hairlines; gradients `in oklch`; one icon family and stroke, icons 1–1.25× text; display type −0.02 to −0.04em, leading 1.0–1.1; crisp 2× product shots (SU-253–264) |
 | Across routes | One page-header pattern, one set of tokens, no value used on only one route (SU-265) |
+| Commerce | Catalog: count + sort + 240-280px filter rail, Load more (24-48) over infinite scroll. Price 20-24px/700, one saving, struck price ≥ 4.5:1. Variants: 44px targets, 2px ring + check, sold-out struck not removed. Buy box: delivery date, shipping, returns above the fold (SU-266–273) |
+| Checkout | Real total before checkout, 320-400px sticky summary, guest first, ≈ 12 form elements, delivery dates not day counts, a 52px protected Place order, confirmation names the order number (SU-274–282) |
+| Sign-in and account | 360-400px column, Show password, one neutral error, passwords by length (min 8, 0 composition rules), resets that leak nothing, codes with expiry and resend cooldown. Settings save per section; danger zone last; cancel as easy as sign-up (SU-283–295) |
+| Content and help | One index pattern (date · read time), complete byline, a hand-off at the end, docs shell 240-280 / 680-760 / 200-240px, help articles end with feedback, legal pages dated with a summary (SU-296–305) |
+| Display and media | Carousels ≤ 5 slides with pause, 44px arrows, 48px accordion rows, ratings as text, timelines by day, lightboxes ≥ 85% scrim, video never autoplays with sound, KPI tiles name their comparison (SU-306–315) |
+| Inputs and feedback | Right `type`/`inputmode`/`enterkeyhint`; keyboard never hides the field; counters never block; phone fields without masks; one message type per job; "Copied" in place ~2s; autosave quiet, failure loud; 404/500/429 say what next (SU-316–334) |
+| App patterns | Onboarding ≤ 3 questions and a 3-5 item checklist; tours 3-5 steps, skippable; permission pre-prompts; bell badges capped at 99+; one relative-time ladder; chat groups ≤ 5 min; comments nest 2 levels; slots in the viewer's zone; drag with keyboard and menu alternatives (SU-335–348) |
+| Search, consent, trust | Results restate query and count; no-results recovers; autocomplete ≤ 10, no scroll; pagination with first/last; back links name the place; Reject equals Accept; no dark patterns; popups wait; links say when they leave or download (SU-349–361) |
 
 ## Rule map
 
@@ -249,6 +261,18 @@ Use these unless the project's system says otherwise. The "why" lives in the ref
 | [references/components-inputs.md](references/components-inputs.md) | SU-239–247 | control sizes, the component spec and specimen, switches, choosing a control, dates, upload, search, avatars, chips, shortcuts |
 | [references/interaction.md](references/interaction.md) | SU-248–252 | hover, pressed, selected, disabled and read-only states |
 | [references/craft.md](references/craft.md) | SU-253–264 | shadows, hairlines, gradients, icons, neutrals, display type, imagery, logos, glows, whitespace, finishes |
+| [references/commerce-catalog.md](references/commerce-catalog.md) | SU-266–273 | catalog lists, load more, prices, variant pickers, galleries, buy box, sticky add-to-cart, reviews |
+| [references/commerce-checkout.md](references/commerce-checkout.md) | SU-274–282 | cart lines and totals, mini-cart, checkout path, order summary, shipping, payment, place order, confirmation |
+| [references/auth.md](references/auth.md) | SU-283–288 | sign-in, sign-up, password reset, one-time codes, passkeys, sessions and lockouts |
+| [references/account-billing.md](references/account-billing.md) | SU-289–295 | settings saving, danger zones, notification preferences, sessions and keys, plan toggles, billing, cancellation |
+| [references/content-help.md](references/content-help.md) | SU-296–305 | blog index, bylines, article endings, docs shell, callouts, help center, contact, legal pages, email signup |
+| [references/display-components.md](references/display-components.md) | SU-306–315 | carousels, accordions, key-value lists, ratings, timelines, badges and avatar stacks, lightboxes, video, KPI tiles |
+| [references/inputs-advanced.md](references/inputs-advanced.md) | SU-316–325 | keyboards, counters, phone fields, steppers, sliders, range calendars, tokens, inline edit, rich-text toolbars |
+| [references/feedback-system.md](references/feedback-system.md) | SU-326–334 | message types, copy/share feedback, autosave, offline, 404, 500, 401/403/429, live data, surveys |
+| [references/app-onboarding.md](references/app-onboarding.md) | SU-335–340 | onboarding, tours, permission prompts, notification bells and panels, relative time |
+| [references/app-collaboration.md](references/app-collaboration.md) | SU-341–348 | chat, composers, comments, slot pickers, bookings, uploads, bulk selection, reordering |
+| [references/search-navigation.md](references/search-navigation.md) | SU-349–355 | search results, no results, autocomplete, pagination, back links, language switchers, account menu |
+| [references/consent-trust.md](references/consent-trust.md) | SU-356–361 | cookie consent, preference centre, dark patterns, popups, sign-up consent, outbound and download links |
 | [references/checklist.md](references/checklist.md) | all | final self-check and reviews |
 
 ## Running the scripts

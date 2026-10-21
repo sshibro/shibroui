@@ -9,7 +9,7 @@
 // Every finding lists its instances (CSS paths) and `coverage` says what was checked, what was skipped and
 // why, what it couldn't see (`unseen`), and which hidden states (tabs, menus, dialogs) still need a run.
 (() => {
-  const VERSION = '0.4.0';
+  const VERSION = '0.5.0';
   const OPTIONS = { root: null, band: null, prepare: false, maxFindings: 400, ...(window.__shibroAudit || {}) };
   // Reassigned once at run time: while a modal is open the page behind it is inert, so only the modal is audited.
   let ROOT = (OPTIONS.root && document.querySelector(OPTIONS.root)) || document.body;

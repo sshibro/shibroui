@@ -8,7 +8,7 @@
 // `prepare: true` scrolls the page once first (scroll reveals, lazy sections) and makes the result a Promise.
 // On pages of 3+ screens it also returns `bands` (one entry per top-level block) and `outline`.
 (() => {
-  const VERSION = '0.4.0';
+  const VERSION = '0.5.0';
   const OPTIONS = { root: null, prepare: false, bands: 'auto', bandCols: 64, bandRows: 16, cols: 96, maxRows: 70, ...(window.__shibroPageMap || {}) };
   if (!innerWidth || !innerHeight) {
     const error = 'The viewport is 0×0 (hidden or background browser pane), so the layout cannot be measured. Set a viewport size (e.g. 1280×900), reload, and run again.';
